@@ -78,6 +78,8 @@ import { InvoiceSummaryBar, normalizeCurrencyCode } from '../components/invoices
 import { InvoiceLinesModal } from '../components/invoices/InvoiceLinesModal.js';
 import TvanArtifactCard from '../components/TvanArtifactCard.js';
 import EhoadonDientuPresentationCard, { ehoadonNeedsGdtXml, isEhoadonDientuInvoice } from '../components/EhoadonDientuPresentationCard.js';
+import InvoiceProviderResearchPanel from '../components/InvoiceProviderResearchPanel.js';
+import RawInvoiceJsonPanel from '../components/RawInvoiceJsonPanel.js';
 
 const { RangePicker } = DatePicker;
 const { Text, Paragraph } = Typography;
@@ -2494,12 +2496,14 @@ function InvoiceDrawer({ document, authenticated, onClose }: { document: any | n
           <Descriptions.Item label="Chiết khấu">{money(document.discountAmount)}</Descriptions.Item>
           <Descriptions.Item label="Tổng tiền">{money(document.grandTotal)}</Descriptions.Item>
         </Descriptions></> },
+        { key: 'provider-research', label: 'Tra cứu & NCC HĐĐT', children: <InvoiceProviderResearchPanel document={document as InvoiceDocument} authenticated={authenticated} /> },
         { key: 'dynamic', label: `Trường mở rộng (${dynamicFields.length})`, children: <Table size="small" rowKey={(_, index) => String(index)} pagination={{ pageSize: 50 }} dataSource={dynamicFields} columns={[
           { title: 'Section', dataIndex: 'section', width: 130 },
           { title: 'Tên', dataIndex: 'name', width: 220 },
           { title: 'Kiểu', dataIndex: 'dataType', width: 100 },
           { title: 'Giá trị', dataIndex: 'rawValue', render: (value: unknown) => typeof value === 'object' ? JSON.stringify(value) : String(value ?? '') },
         ]} /> },
+        { key: 'raw-json', label: 'Raw JSON', children: <RawInvoiceJsonPanel document={document as InvoiceDocument} /> },
       ]} />
     </Drawer>
   );
