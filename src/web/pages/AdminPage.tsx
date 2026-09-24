@@ -83,7 +83,7 @@ const emptyStats: TvanCatalogStats = {
   gdtQueryDocuments: 0,
   gdtQueryAutoDocuments: 0,
   databasePath: '',
-  schemaVersion: 1,
+  schemaVersion: 2,
 };
 
 function formatDate(value?: string): string {
@@ -325,8 +325,10 @@ export default function AdminPage() {
   ];
 
   const catalogColumns: any[] = [
-    { title: 'Provider', dataIndex: 'providerCode', width: 155, render: (value: string | undefined, row: TvanCatalogProvider) => <Space direction="vertical" size={0}><Text strong>{value || '—'}</Text><Text type="secondary" style={{ fontSize: 12 }}>{row.displayName}</Text></Space> },
-    { title: 'MST TVAN', dataIndex: 'providerTaxCode', width: 135, render: (value?: string) => value || '—' },
+    { title: 'MST solution', dataIndex: 'solutionProviderTaxCode', width: 145, render: (value: string | undefined, row: TvanCatalogProvider) => <Space direction="vertical" size={0}><Text strong>{value || '—'}</Text><Text type="secondary" style={{ fontSize: 12 }}>{row.displayName}</Text></Space> },
+    { title: 'Transport code', dataIndex: 'transportProviderCode', width: 155, render: (value?: string) => value || '—' },
+    { title: 'MST transport', dataIndex: 'transportProviderTaxCode', width: 140, render: (value?: string) => value || '—' },
+    { title: 'PDF provider', dataIndex: 'presentationProviderCode', width: 160, render: (value?: string) => value || '—' },
     { title: 'Adapter', dataIndex: 'adapterSupported', width: 105, render: (value: boolean) => value ? <Tag color="success">Supported</Tag> : <Tag color="warning">Chưa hỗ trợ</Tag> },
     { title: 'PDF', dataIndex: 'pdfSupported', width: 75, render: (value: boolean) => value ? <Tag color="success">Có</Tag> : <Tag>Không</Tag> },
     { title: 'CAPTCHA', dataIndex: 'captchaMode', width: 105, render: (value?: string) => value || '—' },
@@ -359,18 +361,18 @@ export default function AdminPage() {
   </Space>;
 
   const catalogTab = <Space direction="vertical" size={16} style={{ width: '100%' }}>
-    <Alert type="info" showIcon message="Catalog lưu metadata TVAN đã tổng hợp trong SQLite; không lưu raw invoice, XML/PDF, lookup code, token hoặc cookie." />
+    <Alert type="info" showIcon message="Catalog lưu riêng solution, transport và PDF provider trong SQLite; không lưu raw invoice, XML/PDF, lookup code, token hoặc cookie." />
     <Row gutter={[16, 16]}>
-      <Col xs={12} md={6}><Card><Statistic title="TVAN" value={catalogStats.providers} /></Card></Col>
+      <Col xs={12} md={6}><Card><Statistic title="Provider records" value={catalogStats.providers} /></Card></Col>
       <Col xs={12} md={6}><Card><Statistic title="Có adapter" value={catalogStats.supportedProviders} /></Card></Col>
       <Col xs={12} md={6}><Card><Statistic title="Documents quan sát" value={catalogStats.observedDocuments} /></Card></Col>
       <Col xs={12} md={6}><Card><Statistic title="Query-auto" value={catalogStats.gdtQueryAutoDocuments} /></Card></Col>
     </Row>
     <Card size="small" title="Tìm kiếm / lọc">
       <Space wrap>
-        <Input allowClear prefix={<SearchOutlined />} placeholder="Tên / provider / host" value={catalogFilters.q} onChange={(e) => setCatalogFilters((v) => ({ ...v, q: e.target.value }))} onPressEnter={applyCatalogFilters} style={{ width: 230 }} />
-        <Input allowClear placeholder="Provider code" value={catalogFilters.providerCode} onChange={(e) => setCatalogFilters((v) => ({ ...v, providerCode: e.target.value }))} style={{ width: 170 }} />
-        <Input allowClear placeholder="MST TVAN" value={catalogFilters.providerTaxCode} onChange={(e) => setCatalogFilters((v) => ({ ...v, providerTaxCode: e.target.value }))} style={{ width: 150 }} />
+        <Input allowClear prefix={<SearchOutlined />} placeholder="Tên / MST / provider / host" value={catalogFilters.q} onChange={(e) => setCatalogFilters((v) => ({ ...v, q: e.target.value }))} onPressEnter={applyCatalogFilters} style={{ width: 230 }} />
+        <Input allowClear placeholder="Legacy provider code" value={catalogFilters.providerCode} onChange={(e) => setCatalogFilters((v) => ({ ...v, providerCode: e.target.value }))} style={{ width: 170 }} />
+        <Input allowClear placeholder="Legacy MST" value={catalogFilters.providerTaxCode} onChange={(e) => setCatalogFilters((v) => ({ ...v, providerTaxCode: e.target.value }))} style={{ width: 150 }} />
         <Input allowClear placeholder="Host" value={catalogFilters.host} onChange={(e) => setCatalogFilters((v) => ({ ...v, host: e.target.value }))} style={{ width: 190 }} />
         <Select allowClear placeholder="Adapter" value={catalogFilters.supported} onChange={(value) => setCatalogFilters((v) => ({ ...v, supported: value }))} style={{ width: 150 }} options={[{ value: 'true', label: 'Supported' }, { value: 'false', label: 'Chưa hỗ trợ' }]} />
         <Select allowClear placeholder="Nguồn" value={catalogFilters.source} onChange={(value) => setCatalogFilters((v) => ({ ...v, source: value }))} style={{ width: 160 }} options={['dataset_import', 'gdt_query', 'gdt_query_auto'].map((value) => ({ value, label: sourceLabel(value) }))} />
@@ -378,10 +380,10 @@ export default function AdminPage() {
         <Button onClick={clearCatalogFilters}>Xóa lọc</Button>
       </Space>
     </Card>
-    <Card title="TVAN Catalog" extra={<Text type="secondary">DB schema {catalogStats.schemaVersion} · {catalogStats.databasePath || '—'}</Text>}>
+    <Card title="Provider Catalog" extra={<Text type="secondary">DB schema {catalogStats.schemaVersion} · {catalogStats.databasePath || '—'}</Text>}>
       <Table<TvanCatalogProvider>
-        rowKey="id" columns={catalogColumns} dataSource={catalog.items} loading={catalogLoading} size="small" scroll={{ x: 1700 }}
-        pagination={{ current: catalog.page, pageSize: catalog.pageSize, total: catalog.total, showSizeChanger: true, pageSizeOptions: [20, 50, 100, 200], showTotal: (total) => `${total} TVAN`, onChange: (page, pageSize) => void loadCatalog(token, { page, pageSize }) }}
+        rowKey="id" columns={catalogColumns} dataSource={catalog.items} loading={catalogLoading} size="small" scroll={{ x: 1950 }}
+        pagination={{ current: catalog.page, pageSize: catalog.pageSize, total: catalog.total, showSizeChanger: true, pageSizeOptions: [20, 50, 100, 200], showTotal: (total) => `${total} providers`, onChange: (page, pageSize) => void loadCatalog(token, { page, pageSize }) }}
       />
     </Card>
   </Space>;
@@ -399,14 +401,16 @@ export default function AdminPage() {
           <Descriptions.Item label="Server">{window.location.host}</Descriptions.Item><Descriptions.Item label="Lần refresh">{lastRefreshAt ? formatDate(lastRefreshAt.toISOString()) : '—'}</Descriptions.Item><Descriptions.Item label="Admin browser session">{currentAdminSessionId ? `${currentAdminSessionId.slice(0, 10)}…` : '—'}</Descriptions.Item>
         </Descriptions></Card>
         <Tabs activeKey={activeTab} onChange={(key) => { setActiveTab(key); if (key === 'tvan') void loadCatalog(token, { quiet: true }).catch(() => undefined); }} items={[
-          { key: 'sessions', label: 'Sessions', children: sessionsTab }, { key: 'tvan', label: `TVAN Catalog (${catalogStats.providers})`, children: catalogTab }, { key: 'audit', label: 'Audit log', children: auditTab },
+          { key: 'sessions', label: 'Sessions', children: sessionsTab }, { key: 'tvan', label: `Provider Catalog (${catalogStats.providers})`, children: catalogTab }, { key: 'audit', label: 'Audit log', children: auditTab },
         ]} />
       </Space>
     </Content>
-    <Drawer title={detail ? `${detail.displayName} · ${detail.providerCode || detail.providerTaxCode || detail.id}` : 'TVAN detail'} width={900} open={Boolean(detail) || detailLoading} loading={detailLoading} onClose={() => setDetail(null)}>
+    <Drawer title={detail ? `${detail.displayName} · ${detail.solutionProviderTaxCode || detail.providerCode || detail.id}` : 'Provider detail'} width={900} open={Boolean(detail) || detailLoading} loading={detailLoading} onClose={() => setDetail(null)}>
       {detail ? <Space direction="vertical" size={16} style={{ width: '100%' }}>
         <Descriptions bordered size="small" column={2}>
-          <Descriptions.Item label="Provider code">{detail.providerCode || '—'}</Descriptions.Item><Descriptions.Item label="MST TVAN">{detail.providerTaxCode || '—'}</Descriptions.Item>
+          <Descriptions.Item label="MST solution">{detail.solutionProviderTaxCode || '—'}</Descriptions.Item><Descriptions.Item label="Transport code">{detail.transportProviderCode || '—'}</Descriptions.Item>
+          <Descriptions.Item label="MST transport">{detail.transportProviderTaxCode || '—'}</Descriptions.Item><Descriptions.Item label="PDF provider">{detail.presentationProviderCode || '—'}</Descriptions.Item>
+          <Descriptions.Item label="Legacy provider code">{detail.providerCode || '—'}</Descriptions.Item><Descriptions.Item label="Legacy MST">{detail.providerTaxCode || '—'}</Descriptions.Item>
           <Descriptions.Item label="Adapter">{detail.adapterSupported ? <Tag color="success">Supported</Tag> : <Tag color="warning">Chưa hỗ trợ</Tag>}</Descriptions.Item><Descriptions.Item label="CAPTCHA">{detail.captchaMode || '—'}</Descriptions.Item>
           <Descriptions.Item label="First seen">{formatDate(detail.firstSeenAt)}</Descriptions.Item><Descriptions.Item label="Last seen">{formatDate(detail.lastSeenAt)}</Descriptions.Item>
           <Descriptions.Item label="Documents">{detail.seenDocuments}</Descriptions.Item><Descriptions.Item label="Portal">{detail.primaryPortal && !detail.primaryPortal.includes('<') ? <Link href={detail.primaryPortal} target="_blank" rel="noopener noreferrer">{detail.primaryPortal}</Link> : detail.primaryPortal || '—'}</Descriptions.Item>

@@ -33,7 +33,7 @@ export class TvanCatalogService {
     for (const document of documents) {
       const adapter = this.registry.resolve(document);
       const capability = this.registry.capability(document);
-      const observation = extractTvanObservation(document, capability);
+      const observation = extractTvanObservation(document, capability, adapter?.providerCode);
       if (!observation) continue;
       // Adapter availability is a provider-level fact; capability.supported may be false for a specific invoice missing lookup fields.
       observation.adapterSupported = Boolean(adapter);
@@ -55,6 +55,10 @@ export class TvanCatalogService {
       current.observation.pdfSupported ||= observation.pdfSupported;
       if (!current.observation.providerCode) current.observation.providerCode = observation.providerCode;
       if (!current.observation.providerTaxCode) current.observation.providerTaxCode = observation.providerTaxCode;
+      if (!current.observation.solutionProviderTaxCode) current.observation.solutionProviderTaxCode = observation.solutionProviderTaxCode;
+      if (!current.observation.transportProviderTaxCode) current.observation.transportProviderTaxCode = observation.transportProviderTaxCode;
+      if (!current.observation.transportProviderCode) current.observation.transportProviderCode = observation.transportProviderCode;
+      if (!current.observation.presentationProviderCode) current.observation.presentationProviderCode = observation.presentationProviderCode;
       if (current.observation.displayName === 'TVAN chưa xác định' && observation.displayName !== 'TVAN chưa xác định') current.observation.displayName = observation.displayName;
       const aliasKeys = new Set(current.observation.aliases.map((item) => `${item.type}|${item.value}`));
       for (const alias of observation.aliases) {

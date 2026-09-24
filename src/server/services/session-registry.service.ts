@@ -5,6 +5,7 @@ import type { ConnectorMode } from '../../shared/models/index.js';
 import { SessionService } from './session.service.js';
 import { TvanPdfService } from '../tvan/pdf.service.js';
 import type { SettingsService } from './settings.service.js';
+import { AppError } from '../../shared/utils/index.js';
 
 export const SESSION_COOKIE = '__Host-hddt_session';
 export const INSECURE_SESSION_COOKIE = 'hddt_session';
@@ -82,6 +83,7 @@ export class SessionRegistry {
   create(metadata: { ip?: string; userAgent?: string } = {}): SessionContext {
     this.evictIfNeeded();
     const now = this.now();
+    const session = new SessionService(this.options.mode, this.options.liveOptions, this.options.connectorFactory);
     const context: SessionContext = {
       id: randomSecret(),
       adminId: randomSecret(18),
@@ -93,8 +95,21 @@ export class SessionRegistry {
       userAgentHash: hash(metadata.userAgent, this.auditSalt),
       loginFailures: [],
       abortController: new AbortController(),
-      session: new SessionService(this.options.mode, this.options.liveOptions, this.options.connectorFactory),
-      tvanPdf: new TvanPdfService(this.options.settings, { namespace: randomSecret(12) }),
+      session,
+      tvanPdf: new TvanPdfService(this.options.settings, {
+        namespace: randomSecret(12),
+        loadInvoiceXml: async (document) => {
+          const sellerTaxCode = document.seller?.taxCode;
+          const { templateNo, series, invoiceNo } = document;
+          if (!sellerTaxCode || templateNo === undefined || !series || invoiceNo === undefined || invoiceNo === '') {
+            throw new AppError('TVAN_EHOADON_XML_ID_MISSING', 'Thiếu định danh hóa đơn để tải XML từ GDT.', 422);
+          }
+          const file = await session.getConnector().downloadXml(document.invoiceSource, {
+            sellerTaxCode, templateNo, series, invoiceNo,
+          });
+          return file.content;
+        },
+      }),
       cleanupHandlers: new Set(),
     };
     context.cleanupHandlers.add(() => context.tvanPdf.dispose());

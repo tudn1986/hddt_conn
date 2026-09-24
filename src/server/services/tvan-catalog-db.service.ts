@@ -14,7 +14,7 @@ import type {
 import type { TvanObservation } from '../../shared/tvan-catalog/index.js';
 import type { SettingsService } from './settings.service.js';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 type DbRow = Record<string, unknown>;
 export interface TvanCatalogDbEntry {
@@ -63,6 +63,10 @@ export class TvanCatalogDbService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         provider_code TEXT,
         provider_tax_code TEXT,
+        solution_provider_tax_code TEXT,
+        transport_provider_code TEXT,
+        transport_provider_tax_code TEXT,
+        presentation_provider_code TEXT,
         display_name TEXT NOT NULL,
         adapter_supported INTEGER NOT NULL DEFAULT 0,
         pdf_supported INTEGER NOT NULL DEFAULT 0,
@@ -135,6 +139,23 @@ export class TvanCatalogDbService {
       );
       CREATE INDEX IF NOT EXISTS idx_tvan_batch_observed ON tvan_ingest_batches(observed_at DESC);
     `);
+    // Existing v1 databases retain their provider rows and all related observations.
+    const columns = new Set((this.db.prepare('PRAGMA table_info(tvan_providers)').all() as DbRow[]).map((row) => text(row, 'name')));
+    for (const column of [
+      'solution_provider_tax_code', 'transport_provider_code',
+      'transport_provider_tax_code', 'presentation_provider_code',
+    ]) {
+      if (!columns.has(column)) {
+        try {
+          this.db.exec(`ALTER TABLE tvan_providers ADD COLUMN ${column} TEXT`);
+        } catch (error) {
+          // Another app instance may have completed this migration after PRAGMA.
+          const current = this.db.prepare('PRAGMA table_info(tvan_providers)').all() as DbRow[];
+          if (!current.some((row) => text(row, 'name') === column)) throw error;
+        }
+      }
+    }
+    this.db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_tvan_solution_tax_code ON tvan_providers(solution_provider_tax_code) WHERE solution_provider_tax_code IS NOT NULL');
     const now = new Date().toISOString();
     this.db.prepare(`INSERT INTO tvan_catalog_meta(key, value) VALUES('schema_version', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`).run(String(SCHEMA_VERSION));
     this.db.prepare(`INSERT INTO tvan_catalog_meta(key, value) VALUES('created_at', ?) ON CONFLICT(key) DO NOTHING`).run(now);
@@ -147,17 +168,24 @@ export class TvanCatalogDbService {
   }
 
   private providerIdsForAliases(observation: TvanObservation): number[] {
+    if (observation.solutionProviderTaxCode) {
+      // A transport alias can belong to many distinct solution providers.
+      return (this.db.prepare('SELECT id FROM tvan_providers WHERE solution_provider_tax_code = ?')
+        .all(observation.solutionProviderTaxCode) as DbRow[]).map((row) => numberValue(row, 'id'));
+    }
     const ids = new Set<number>();
-    const lookup = this.db.prepare('SELECT provider_id FROM tvan_provider_aliases WHERE alias_type = ? AND alias_value = ?');
+    const lookup = this.db.prepare(`SELECT a.provider_id FROM tvan_provider_aliases a
+      JOIN tvan_providers p ON p.id = a.provider_id
+      WHERE a.alias_type = ? AND a.alias_value = ? AND p.solution_provider_tax_code IS NULL`);
     for (const alias of observation.aliases) {
       const row = lookup.get(alias.type, alias.value) as DbRow | undefined;
       if (row) ids.add(numberValue(row, 'provider_id'));
     }
     if (observation.providerCode) {
-      for (const row of this.db.prepare('SELECT id FROM tvan_providers WHERE provider_code = ?').all(observation.providerCode) as DbRow[]) ids.add(numberValue(row, 'id'));
+      for (const row of this.db.prepare('SELECT id FROM tvan_providers WHERE provider_code = ? AND solution_provider_tax_code IS NULL').all(observation.providerCode) as DbRow[]) ids.add(numberValue(row, 'id'));
     }
     if (observation.providerTaxCode) {
-      for (const row of this.db.prepare('SELECT id FROM tvan_providers WHERE provider_tax_code = ?').all(observation.providerTaxCode) as DbRow[]) ids.add(numberValue(row, 'id'));
+      for (const row of this.db.prepare('SELECT id FROM tvan_providers WHERE provider_tax_code = ? AND solution_provider_tax_code IS NULL').all(observation.providerTaxCode) as DbRow[]) ids.add(numberValue(row, 'id'));
     }
     return [...ids].filter((id) => id > 0).sort((a, b) => a - b);
   }
@@ -167,6 +195,9 @@ export class TvanCatalogDbService {
     const from = this.db.prepare('SELECT * FROM tvan_providers WHERE id = ?').get(fromId) as DbRow | undefined;
     const into = this.db.prepare('SELECT * FROM tvan_providers WHERE id = ?').get(intoId) as DbRow | undefined;
     if (!from || !into) return;
+    const fromSolution = text(from, 'solution_provider_tax_code');
+    const intoSolution = text(into, 'solution_provider_tax_code');
+    if (fromSolution !== intoSolution) throw new Error('Cannot merge providers with different solution identities');
 
     for (const row of this.db.prepare('SELECT * FROM tvan_provider_aliases WHERE provider_id = ?').all(fromId) as DbRow[]) {
       this.db.prepare(`
@@ -228,6 +259,10 @@ export class TvanCatalogDbService {
       UPDATE tvan_providers SET
         provider_code=COALESCE(provider_code, ?),
         provider_tax_code=COALESCE(provider_tax_code, ?),
+        solution_provider_tax_code=COALESCE(solution_provider_tax_code, ?),
+        transport_provider_code=COALESCE(transport_provider_code, ?),
+        transport_provider_tax_code=COALESCE(transport_provider_tax_code, ?),
+        presentation_provider_code=COALESCE(presentation_provider_code, ?),
         display_name=CASE WHEN display_name LIKE 'TVAN chưa xác định%' THEN ? ELSE display_name END,
         adapter_supported=MAX(adapter_supported, ?),
         pdf_supported=MAX(pdf_supported, ?),
@@ -241,7 +276,10 @@ export class TvanCatalogDbService {
         updated_at=MAX(updated_at, ?)
       WHERE id=?
     `).run(
-      text(from, 'provider_code') ?? null, text(from, 'provider_tax_code') ?? null, text(from, 'display_name') || 'TVAN chưa xác định',
+      text(from, 'provider_code') ?? null, text(from, 'provider_tax_code') ?? null,
+      fromSolution ?? null, text(from, 'transport_provider_code') ?? null,
+      text(from, 'transport_provider_tax_code') ?? null, text(from, 'presentation_provider_code') ?? null,
+      text(from, 'display_name') || 'TVAN chưa xác định',
       numberValue(from, 'adapter_supported'), numberValue(from, 'pdf_supported'), text(from, 'captcha_mode') ?? null,
       text(from, 'first_seen_at') || '', text(from, 'last_seen_at') || '', numberValue(from, 'seen_documents'),
       numberValue(from, 'seen_dataset_import'), numberValue(from, 'seen_gdt_query'), numberValue(from, 'seen_gdt_query_auto'),
@@ -255,12 +293,18 @@ export class TvanCatalogDbService {
     if (!ids.length) {
       const result = this.db.prepare(`
         INSERT INTO tvan_providers(
-          provider_code, provider_tax_code, display_name, adapter_supported, pdf_supported, captcha_mode,
+          provider_code, provider_tax_code, solution_provider_tax_code, transport_provider_code,
+          transport_provider_tax_code, presentation_provider_code,
+          display_name, adapter_supported, pdf_supported, captcha_mode,
           first_seen_at, last_seen_at, created_at, updated_at
-        ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         observation.providerCode ?? null,
         observation.providerTaxCode ?? null,
+        observation.solutionProviderTaxCode ?? null,
+        observation.transportProviderCode ?? null,
+        observation.transportProviderTaxCode ?? null,
+        observation.presentationProviderCode ?? null,
         observation.displayName,
         observation.adapterSupported ? 1 : 0,
         observation.pdfSupported ? 1 : 0,
@@ -281,6 +325,10 @@ export class TvanCatalogDbService {
       UPDATE tvan_providers SET
         provider_code=COALESCE(?, provider_code),
         provider_tax_code=COALESCE(?, provider_tax_code),
+        solution_provider_tax_code=COALESCE(?, solution_provider_tax_code),
+        transport_provider_code=COALESCE(?, transport_provider_code),
+        transport_provider_tax_code=COALESCE(?, transport_provider_tax_code),
+        presentation_provider_code=COALESCE(?, presentation_provider_code),
         display_name=CASE WHEN ? NOT IN ('', 'unknown') THEN ? ELSE display_name END,
         adapter_supported=MAX(adapter_supported, ?),
         pdf_supported=MAX(pdf_supported, ?),
@@ -293,6 +341,10 @@ export class TvanCatalogDbService {
     `).run(
       entry.observation.providerCode ?? null,
       entry.observation.providerTaxCode ?? null,
+      entry.observation.solutionProviderTaxCode ?? null,
+      entry.observation.transportProviderCode ?? null,
+      entry.observation.transportProviderTaxCode ?? null,
+      entry.observation.presentationProviderCode ?? null,
       entry.observation.displayName,
       entry.observation.displayName,
       entry.observation.adapterSupported ? 1 : 0,
@@ -313,7 +365,11 @@ export class TvanCatalogDbService {
         last_seen_at=excluded.last_seen_at,
         seen_count=tvan_provider_aliases.seen_count + excluded.seen_count
     `);
-    for (const alias of entry.observation.aliases) {
+    // The v1 alias table is globally unique. Never assign a shared transport/host
+    // alias to one of several solution providers (or steal it from a legacy row).
+    if (entry.observation.solutionProviderTaxCode) {
+      aliasStatement.run(providerId, 'solution_tax_code', entry.observation.solutionProviderTaxCode, now, now, entry.documentCount);
+    } else for (const alias of entry.observation.aliases) {
       const key = `${alias.type}|${alias.value}`;
       aliasStatement.run(providerId, alias.type, alias.value, now, now, entry.aliasCounts[key] ?? 1);
     }
@@ -370,6 +426,10 @@ export class TvanCatalogDbService {
       id,
       providerCode: text(row, 'provider_code'),
       providerTaxCode: text(row, 'provider_tax_code'),
+      solutionProviderTaxCode: text(row, 'solution_provider_tax_code'),
+      transportProviderCode: text(row, 'transport_provider_code'),
+      transportProviderTaxCode: text(row, 'transport_provider_tax_code'),
+      presentationProviderCode: text(row, 'presentation_provider_code'),
       displayName: text(row, 'display_name') || 'TVAN chưa xác định',
       adapterSupported: boolValue(row, 'adapter_supported'),
       pdfSupported: boolValue(row, 'pdf_supported'),
@@ -392,10 +452,12 @@ export class TvanCatalogDbService {
     const params: Array<string | number> = [];
     if (filter.q) {
       const q = `%${filter.q.trim()}%`;
-      where.push(`(p.provider_code LIKE ? OR p.provider_tax_code LIKE ? OR p.display_name LIKE ? OR EXISTS (
+      where.push(`(p.provider_code LIKE ? OR p.provider_tax_code LIKE ? OR p.solution_provider_tax_code LIKE ?
+        OR p.transport_provider_code LIKE ? OR p.transport_provider_tax_code LIKE ? OR p.presentation_provider_code LIKE ?
+        OR p.display_name LIKE ? OR EXISTS (
         SELECT 1 FROM tvan_endpoints e WHERE e.provider_id=p.id AND (e.host LIKE ? OR e.origin LIKE ? OR e.path_pattern LIKE ?)
       ))`);
-      params.push(q, q, q, q, q, q);
+      params.push(q, q, q, q, q, q, q, q, q, q);
     }
     if (filter.providerCode) { where.push('p.provider_code = ?'); params.push(filter.providerCode); }
     if (filter.providerTaxCode) { where.push('p.provider_tax_code = ?'); params.push(filter.providerTaxCode); }

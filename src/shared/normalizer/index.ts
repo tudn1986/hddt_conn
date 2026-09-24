@@ -13,6 +13,7 @@ import { buildDocumentKey } from '../filenames/index.js';
 import { dedupeDynamicFields, extractDynamicFields } from '../dynamic-fields/index.js';
 import { extractLookup } from '../lookup/index.js';
 import { normalizeInvoiceRelation } from '../invoice-relations/normalize-relation.js';
+import { presentationForSolutionTaxCode } from '../provider-resolution.js';
 import { readLineAmount, resolveFinancialAmounts } from './financial-amounts.js';
 import {
   isRecord,
@@ -195,6 +196,9 @@ export function normalizeInvoice(
   const taxSummaries = arrayOfRecords(rawTax).map(taxSummaryFrom);
   const financial = resolveFinancialAmounts({ source, summary, detail, lines, taxSummaries });
   const issueDate = safeString(source.tdlap ?? source.nlap ?? source.ddLap ?? source.issueDate);
+  const solutionProviderTaxCode = safeString(source.msttcgp);
+  const transportProviderTaxCode = safeString(source.tvandnkntt);
+  const transportProviderCode = safeString(source.ngcnhat ?? source.tentvandnkntt);
   const providerCode = safeString(source.ngcnhat ?? source.tentvandnkntt ?? source.providerCode);
   const dynamicFields = dedupeDynamicFields([
     ...existingDynamicFields(summary.dynamicFields),
@@ -236,6 +240,13 @@ export function normalizeInvoice(
     nature: safeStringOrNumber(source.tchat ?? source.nature),
     relation: normalizeInvoiceRelation(summary) ?? normalizeInvoiceRelation(source),
     providerCode,
+    providers: {
+      solution: solutionProviderTaxCode ? { taxCode: solutionProviderTaxCode } : undefined,
+      transport: transportProviderTaxCode || transportProviderCode
+        ? { taxCode: transportProviderTaxCode, code: transportProviderCode }
+        : undefined,
+      presentation: presentationForSolutionTaxCode(solutionProviderTaxCode),
+    },
     lookup: extractLookup(source, providerCode),
     qrCode: safeString(source.qrcode ?? source.qrCode),
     taxSummaries,

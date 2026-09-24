@@ -1,20 +1,26 @@
 import type { InvoiceDocument, TvanProviderCapability } from '../models/index.js';
 import { isRecord, safeString } from '../utils/index.js';
+import { presentationForSolutionTaxCode } from '../provider-resolution.js';
 
 export type TvanObservationSource = 'dataset_import' | 'gdt_query' | 'gdt_query_auto';
-export type TvanAliasType = 'provider_code' | 'tax_code' | 'host';
+export type TvanAliasType = 'provider_code' | 'tax_code' | 'host' | 'solution_tax_code';
 export type TvanEndpointKind = 'provider_portal' | 'lookup_portal';
 
 export interface TvanObservationAlias { type: TvanAliasType; value: string; }
 export interface TvanObservationEndpoint { kind: TvanEndpointKind; origin: string; host: string; pathPattern: string; }
 export interface TvanObservationMapping {
-  semanticRole: 'provider_code' | 'provider_tax_code' | 'provider_name' | 'lookup_portal' | 'lookup_url' | 'lookup_code' | 'lookup_code_type' | 'unknown_tvan_candidate';
+  semanticRole: 'provider_code' | 'provider_tax_code' | 'provider_name' | 'lookup_portal' | 'lookup_url' | 'lookup_code' | 'lookup_code_type' | 'unknown_tvan_candidate'
+    | 'solution_provider_tax_code' | 'transport_provider_tax_code' | 'transport_provider_code' | 'presentation_provider';
   fieldName: string;
   fieldPath: string;
 }
 export interface TvanObservation {
   providerCode?: string;
   providerTaxCode?: string;
+  solutionProviderTaxCode?: string;
+  transportProviderTaxCode?: string;
+  transportProviderCode?: string;
+  presentationProviderCode?: string;
   displayName: string;
   adapterSupported: boolean;
   pdfSupported: boolean;
@@ -32,7 +38,7 @@ const KNOWN_PROVIDER_METADATA: Record<string, { displayName: string; providerTax
   tvan_invoice: { displayName: 'M-Invoice', providerTaxCode: '0106026495', providerPortal: 'https://tracuuhoadon.minvoice.com.vn' },
   tvan_softdreams: { displayName: 'SoftDreams EasyInvoice', providerTaxCode: '0105987432' },
 };
-const PROVIDER_TAX_CODE_NAMES = new Set(['msttcgp', 'tvandnkntt', 'mst tvan', 'ma so thue tvan', 'tax code tvan', 'provider tax code']);
+const TRANSPORT_TAX_CODE_NAMES = new Set(['tvandnkntt', 'mst tvan', 'ma so thue tvan', 'tax code tvan', 'provider tax code']);
 const PROVIDER_NAME_NAMES = new Set(['tentvandnkntt', 'ten tvan', 'provider name']);
 const PORTAL_NAMES = new Set(['portallink', 'portal link', 'link tra cuu nguoi ban', 'lookupurl', 'lookup url', 'path']);
 const LOOKUP_CODE_NAMES = new Set(['fkey', 'hilo searchkey', 'ma tra cuu', 'ma so bi mat', 'so bao mat', 'sobaomat', 'transactionid', 'lookupcode']);
@@ -124,26 +130,42 @@ function mapping(role: TvanObservationMapping['semanticRole'], fieldName: string
   return { semanticRole: role, fieldName: fieldName.slice(0, 200), fieldPath: normalizeFieldPath(fieldPath) };
 }
 
-export function extractTvanObservation(document: InvoiceDocument, capability: TvanProviderCapability): TvanObservation | undefined {
+export function extractTvanObservation(
+  document: InvoiceDocument,
+  capability: TvanProviderCapability,
+  resolvedPresentationProviderCode?: string,
+): TvanObservation | undefined {
   const fields = collectDocumentFields(document);
   const explicitProviderCode = normalizedProviderCode(document.providerCode ?? document.lookup?.providerCode);
   const capabilityCode = normalizedProviderCode(capability.providerCode);
   const providerCode = explicitProviderCode || (capabilityCode && capabilityCode !== 'unknown' ? capabilityCode : undefined);
   const known = providerCode ? KNOWN_PROVIDER_METADATA[providerCode] : undefined;
-  let observedTaxCode: string | undefined;
+  let solutionProviderTaxCode = normalizedTaxCode(document.providers?.solution?.taxCode);
+  let transportProviderTaxCode = normalizedTaxCode(document.providers?.transport?.taxCode);
+  let transportProviderCode = normalizedProviderCode(document.providers?.transport?.code ?? explicitProviderCode);
   let observedName: string | undefined;
   const mappings: TvanObservationMapping[] = [];
   const endpoints: TvanObservationEndpoint[] = [];
 
   if (explicitProviderCode) mappings.push(mapping('provider_code', document.providerCode ? 'providerCode' : 'lookup.providerCode', document.providerCode ? 'document.providerCode' : 'document.lookup.providerCode'));
+  if (transportProviderCode) mappings.push(mapping('transport_provider_code', 'providerCode', 'document.providers.transport.code'));
   if (document.lookup?.lookupCodeType) mappings.push(mapping('lookup_code_type', document.lookup.lookupCodeType, document.lookup.sourceSection || 'document.lookup'));
   if (document.lookup?.lookupCode) mappings.push(mapping('lookup_code', document.lookup.sourceField || document.lookup.lookupCodeType || 'lookupCode', document.lookup.sourceSection || 'document.lookup'));
   if (document.lookup?.lookupBaseUrl) mappings.push(mapping('lookup_portal', document.lookup.sourceField || 'lookupBaseUrl', document.lookup.sourceSection || 'document.lookup'));
 
   for (const field of fields) {
     const name = normalizedName(field.name);
-    if (!observedTaxCode && PROVIDER_TAX_CODE_NAMES.has(name)) {
-      const value = normalizedTaxCode(field.value); if (value) { observedTaxCode = value; mappings.push(mapping('provider_tax_code', field.name, field.path)); }
+    if (name === 'msttcgp') {
+      const value = normalizedTaxCode(field.value);
+      if (value) { solutionProviderTaxCode ||= value; mappings.push(mapping('solution_provider_tax_code', field.name, field.path)); }
+    }
+    if (TRANSPORT_TAX_CODE_NAMES.has(name)) {
+      const value = normalizedTaxCode(field.value);
+      if (value) { transportProviderTaxCode ||= value; mappings.push(mapping('transport_provider_tax_code', field.name, field.path)); }
+    }
+    if (name === 'ngcnhat') {
+      const value = normalizedProviderCode(field.value);
+      if (value) { transportProviderCode ||= value; mappings.push(mapping('transport_provider_code', field.name, field.path)); }
     }
     if (!observedName && PROVIDER_NAME_NAMES.has(name)) {
       const value = safeString(field.value)?.trim(); if (value) { observedName = value.slice(0, 300); mappings.push(mapping('provider_name', field.name, field.path)); }
@@ -155,24 +177,49 @@ export function extractTvanObservation(document: InvoiceDocument, capability: Tv
     if (LOOKUP_CODE_NAMES.has(name)) mappings.push(mapping('lookup_code', field.name, field.path));
   }
 
-  const providerTaxCode = observedTaxCode || known?.providerTaxCode;
+  const resolvedPresentationCode = normalizedProviderCode(resolvedPresentationProviderCode);
+  const knownCapabilityPresentationCode = capabilityCode && capabilityCode !== 'unknown' && KNOWN_PROVIDER_METADATA[capabilityCode]
+    ? capabilityCode
+    : undefined;
+  const presentationProviderCode = normalizedProviderCode(document.providers?.presentation?.adapterCode)
+    || presentationForSolutionTaxCode(solutionProviderTaxCode)?.adapterCode
+    || resolvedPresentationCode
+    || knownCapabilityPresentationCode;
+  if (presentationProviderCode) mappings.push(mapping('presentation_provider', 'adapterCode', 'document.providers.presentation'));
+  // Legacy catalog tax code names the transport when it differs from the solution provider.
+  const providerTaxCode = transportProviderTaxCode
+    || (providerCode === presentationProviderCode ? solutionProviderTaxCode : undefined)
+    || known?.providerTaxCode;
   const lookupEndpoint = endpointFromLookup(document); if (lookupEndpoint) endpoints.push(lookupEndpoint);
   if (known?.providerPortal) { const endpoint = sanitizeEndpoint(known.providerPortal, 'provider_portal'); if (endpoint) endpoints.push(endpoint); }
-  const displayName = ((capability.displayName && capability.displayName !== 'unknown' && capability.displayName !== capability.providerCode ? capability.displayName : undefined)
-    || known?.displayName || observedName || providerCode || providerTaxCode || endpoints[0]?.host || 'TVAN chưa xác định').slice(0, 300);
+  const capabilityDisplayName = capability.displayName && capability.displayName !== 'unknown' && capability.displayName !== capability.providerCode
+    ? capability.displayName
+    : undefined;
+  const presentationKnown = presentationProviderCode ? KNOWN_PROVIDER_METADATA[presentationProviderCode] : undefined;
+  const displayName = (solutionProviderTaxCode
+    ? ((presentationProviderCode && capabilityCode === presentationProviderCode ? capabilityDisplayName : undefined)
+      || presentationKnown?.displayName
+      || presentationProviderCode
+      || solutionProviderTaxCode)
+    : capabilityDisplayName || known?.displayName || observedName || providerCode || providerTaxCode || endpoints[0]?.host || 'TVAN chưa xác định'
+  ).slice(0, 300);
 
   const aliases: TvanObservationAlias[] = [];
+  if (solutionProviderTaxCode) aliases.push({ type: 'solution_tax_code', value: solutionProviderTaxCode });
   if (providerCode) aliases.push({ type: 'provider_code', value: providerCode });
   if (providerTaxCode) aliases.push({ type: 'tax_code', value: providerTaxCode });
   endpoints.forEach((endpoint) => { if (!endpoint.host.includes('<sellerTaxCode>')) aliases.push({ type: 'host', value: endpoint.host }); });
   const uniqueAliases = dedupe(aliases, (item) => `${item.type}|${item.value}`);
   const uniqueEndpoints = dedupe(endpoints, (item) => `${item.kind}|${item.origin}|${item.pathPattern}`);
   const uniqueMappings = dedupe(mappings, (item) => `${item.semanticRole}|${item.fieldName}|${item.fieldPath}`);
-  if (!providerCode && !providerTaxCode && !uniqueEndpoints.length && !uniqueMappings.length) return undefined;
-  return { providerCode, providerTaxCode, displayName, adapterSupported: capability.supported, pdfSupported: capability.supported, captchaMode: capability.captchaMode, aliases: uniqueAliases, endpoints: uniqueEndpoints, mappings: uniqueMappings };
+  if (!solutionProviderTaxCode && !providerCode && !providerTaxCode && !uniqueEndpoints.length && !uniqueMappings.length) return undefined;
+  return { providerCode, providerTaxCode, solutionProviderTaxCode, transportProviderTaxCode, transportProviderCode,
+    presentationProviderCode, displayName, adapterSupported: capability.supported, pdfSupported: capability.supported,
+    captchaMode: capability.captchaMode, aliases: uniqueAliases, endpoints: uniqueEndpoints, mappings: uniqueMappings };
 }
 
 export function tvanObservationIdentity(observation: TvanObservation): string {
+  if (observation.solutionProviderTaxCode) return `solution_tax_code:${observation.solutionProviderTaxCode}`;
   if (observation.providerCode) return `provider_code:${observation.providerCode}`;
   if (observation.providerTaxCode) return `tax_code:${observation.providerTaxCode}`;
   const host = observation.aliases.find((item) => item.type === 'host')?.value || observation.endpoints[0]?.host;

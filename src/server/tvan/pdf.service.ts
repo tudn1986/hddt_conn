@@ -75,6 +75,7 @@ function uniqueFileName(existing: Set<string>, preferred: string): string {
 export class TvanPdfService {
   private readonly registry: TvanRegistry;
   private readonly fetchImpl: FetchLike;
+  private readonly loadInvoiceXml?: (document: InvoiceDocument) => Promise<Buffer>;
   private readonly tokens = new Map<string, TvanTokenState>();
   private readonly challenges = new Map<string, PendingChallenge>();
   private readonly batches = new Map<string, BatchInternal>();
@@ -89,10 +90,11 @@ export class TvanPdfService {
 
   constructor(
     private readonly settings: SettingsService,
-    options: { registry?: TvanRegistry; fetchImpl?: FetchLike; namespace?: string } = {},
+    options: { registry?: TvanRegistry; fetchImpl?: FetchLike; namespace?: string; loadInvoiceXml?: (document: InvoiceDocument) => Promise<Buffer> } = {},
   ) {
     this.registry = options.registry || new TvanRegistry();
     this.fetchImpl = options.fetchImpl || fetch;
+    this.loadInvoiceXml = options.loadInvoiceXml;
     const namespace = options.namespace && /^[A-Za-z0-9_-]{8,64}$/.test(options.namespace)
       ? options.namespace
       : generateId();
@@ -163,6 +165,7 @@ export class TvanPdfService {
     const key = this.tokenKey(adapter, document);
     return {
       fetchImpl: this.fetchImpl,
+      loadInvoiceXml: this.loadInvoiceXml,
       timeoutMs: network.requestTimeoutMs,
       maxDownloadBytes: network.maxDownloadBytes,
       token: this.tokenFor(adapter, document),

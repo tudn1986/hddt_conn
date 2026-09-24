@@ -268,6 +268,25 @@ export interface InvoiceLine {
   raw?: unknown;
 }
 
+export interface InvoiceProviderIdentity {
+  taxCode?: string;
+  code?: string;
+  name?: string;
+}
+
+export interface InvoicePresentationProvider {
+  providerCode?: string;
+  adapterCode?: string;
+  domain?: string;
+  confidence?: 'high' | 'medium' | 'low';
+}
+
+export interface InvoiceProviderInfo {
+  solution?: InvoiceProviderIdentity;
+  transport?: InvoiceProviderIdentity;
+  presentation?: InvoicePresentationProvider;
+}
+
 export interface InvoiceDocument {
   key: string;
   direction: Direction;
@@ -302,6 +321,7 @@ export interface InvoiceDocument {
   /** Direct relation exposed by GDT for replacement/adjustment invoices. */
   relation?: InvoiceRelation;
   providerCode?: string;
+  providers?: InvoiceProviderInfo;
   lookup?: InvoiceLookup;
   qrCode?: string;
   taxSummaries: TaxSummary[];
@@ -587,6 +607,10 @@ export interface TvanCatalogProvider {
   id: number;
   providerCode?: string;
   providerTaxCode?: string;
+  solutionProviderTaxCode?: string;
+  transportProviderCode?: string;
+  transportProviderTaxCode?: string;
+  presentationProviderCode?: string;
   displayName: string;
   adapterSupported: boolean;
   pdfSupported: boolean;
@@ -602,7 +626,7 @@ export interface TvanCatalogProvider {
 }
 
 export interface TvanCatalogAlias {
-  type: 'provider_code' | 'tax_code' | 'host';
+  type: 'provider_code' | 'tax_code' | 'host' | 'solution_tax_code';
   value: string;
   firstSeenAt: string;
   lastSeenAt: string;

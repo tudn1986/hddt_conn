@@ -44,6 +44,7 @@ export interface TvanAdapterContext {
   maxDownloadBytes: number;
   token?: TvanTokenState;
   setToken: (token: TvanTokenState | undefined) => void;
+  loadInvoiceXml?: (document: InvoiceDocument) => Promise<Buffer>;
 }
 
 export interface TvanChallengeResult {
