@@ -13,6 +13,7 @@ describe('solution provider display', () => {
     ['0106026495', 'M-INVOICE'],
     ['0106026495-001', 'M-INVOICE'],
     ['0105987432', 'SOFTDREAMS'],
+    ['0100684378', 'VNPT'],
     ['0314743623', 'EHOADONDIENTU'],
   ])('maps MSTTCGP %s to %s', (taxCode, label) => {
     expect(solutionProviderFriendlyName(taxCode)).toBe(label);

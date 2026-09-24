@@ -37,6 +37,7 @@ const KNOWN_PROVIDER_METADATA: Record<string, { displayName: string; providerTax
   tvan_viettel: { displayName: 'Viettel SInvoice', providerPortal: 'https://vinvoice.viettel.vn' },
   tvan_invoice: { displayName: 'M-Invoice', providerTaxCode: '0106026495', providerPortal: 'https://tracuuhoadon.minvoice.com.vn' },
   tvan_softdreams: { displayName: 'SoftDreams EasyInvoice', providerTaxCode: '0105987432' },
+  tvan_vnpt: { displayName: 'VNPT Invoice', providerPortal: 'https://portaltool-miennam.vnpt-invoice.com.vn' },
 };
 const TRANSPORT_TAX_CODE_NAMES = new Set(['tvandnkntt', 'mst tvan', 'ma so thue tvan', 'tax code tvan', 'provider tax code']);
 const PROVIDER_NAME_NAMES = new Set(['tentvandnkntt', 'ten tvan', 'provider name']);

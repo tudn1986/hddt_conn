@@ -7,12 +7,13 @@ import { ViettelTvanAdapter } from './adapters/viettel.js';
 import { InvoiceTvanAdapter } from './adapters/invoice.js';
 import { SoftdreamsTvanAdapter } from './adapters/softdreams.js';
 import { EhoadonDientuPresentationAdapter } from './adapters/ehoadondientu.js';
+import { VnptInvoiceTvanAdapter } from './adapters/vnpt.js';
 import type { TvanAdapter } from './types.js';
 
 export class TvanRegistry {
   private readonly adapters: TvanAdapter[];
 
-  constructor(adapters: TvanAdapter[] = [new MisaTvanAdapter(), new InvoiceTvanAdapter(), new SoftdreamsTvanAdapter(), new ViettelTvanAdapter(), new EhoadonDientuPresentationAdapter()]) {
+  constructor(adapters: TvanAdapter[] = [new MisaTvanAdapter(), new InvoiceTvanAdapter(), new SoftdreamsTvanAdapter(), new ViettelTvanAdapter(), new EhoadonDientuPresentationAdapter(), new VnptInvoiceTvanAdapter()]) {
     this.adapters = [...adapters];
   }
 
