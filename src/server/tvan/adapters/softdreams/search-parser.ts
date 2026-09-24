@@ -229,8 +229,21 @@ function numberLiteral(value: string | undefined): number | undefined {
 
 function readBoolean(value: unknown): boolean | undefined {
   if (typeof value === 'boolean') return value;
-  if (value === 1 || value === '1' || value === 'true') return true;
-  if (value === 0 || value === '0' || value === 'false') return false;
+  if (value === 1 || value === '1') return true;
+  if (value === 0 || value === '0') return false;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLocaleLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+  return undefined;
+}
+
+function booleanLiteral(value: string | undefined): boolean | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLocaleLowerCase();
+  if (normalized === 'true') return true;
+  if (normalized === 'false') return false;
   return undefined;
 }
 
@@ -260,9 +273,25 @@ export function parseSoftdreamsSearchResponse(pageHtml: string): SoftdreamsSearc
   }
 
   const renderModel = parseRenderModel(scripts, invocation.script);
-  const numericArgs = invocation.args.slice(1, -1).map(numberLiteral).filter((value): value is number => value !== undefined);
-  const status = safeNumber(invData.status) ?? safeNumber(invData.Status) ?? numericArgs[0];
-  const rowPerPage = safeNumber(invData.rowPerPage) ?? safeNumber(invData.RowPerPage) ?? numericArgs[1];
+  const numericArgs = invocation.args.slice(1, -1)
+    .map(numberLiteral)
+    .filter((value): value is number => value !== undefined);
+
+  // Production signature:
+  // showInv(str, cusType, clientNotSign, idInvoice, pattern, fKey,
+  //         attachFile, status, rowPerPage, model, token)
+  // Prefer those exact positions; keep numeric fallback only for older shortened captures.
+  const productionSignature = invocation.args.length >= 11;
+  const status = safeNumber(invData.status)
+    ?? safeNumber(invData.Status)
+    ?? (productionSignature ? numberLiteral(invocation.args[7]) : undefined)
+    ?? numericArgs[0];
+  const rowPerPage = safeNumber(invData.rowPerPage)
+    ?? safeNumber(invData.RowPerPage)
+    ?? (productionSignature ? numberLiteral(invocation.args[8]) : undefined)
+    ?? numericArgs[1];
+  const attachFile = readBoolean(invData.attachFile)
+    ?? (productionSignature ? booleanLiteral(invocation.args[6]) : undefined);
 
   return {
     invoiceHtml: invData.str,
@@ -271,7 +300,7 @@ export function parseSoftdreamsSearchResponse(pageHtml: string): SoftdreamsSearc
     pattern: safeString(invData.pattern) ?? safeString(invData.Pattern),
     customerType: safeString(invData.cusType) ?? safeString(invData.customerType),
     clientNotSign: readBoolean(invData.clientNotSign),
-    attachFile: readBoolean(invData.attachFile),
+    attachFile,
     status,
     rowPerPage,
     renderModel,

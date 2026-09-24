@@ -1,0 +1,25 @@
+<!doctype html>
+<html><body>
+<input id="ListInv" name="ListInv" type="hidden" value="0"/>
+<input id="InvData" name="InvData" type="hidden" value="{&quot;str&quot;:&quot;&lt;html xmlns=\&quot;http://www.w3.org/1999/xhtml\&quot;&gt;\n&lt;head&gt;&lt;title&gt;VAT&lt;/title&gt;&lt;/head&gt;\n&lt;body&gt;\n&lt;style&gt;\n.VATTEMP { background-color:#fff; font-family:&#x27;Time New Roman&#x27;; width:808px; font-size:14px!important; }\n.VATTEMP .content {\n  border:30px solid transparent;\n  border-image:url(&#x27;data:image/jpeg;base64,SANITIZED_CAPTURE_JPEG_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA0123456789&#x27;) 30 round;\n}\n&lt;/style&gt;\n&lt;div class=\&quot;VATTEMP\&quot;&gt;\n  &lt;div class=\&quot;content\&quot;&gt;\n    &lt;table class=\&quot;invtable\&quot;&gt;&lt;tbody class=\&quot;prds\&quot; id=\&quot;bd\&quot;&gt;\n      &lt;tr class=\&quot;data\&quot;&gt;&lt;td class=\&quot;stt\&quot;&gt;1&lt;/td&gt;&lt;td&gt;Sanitized production-capture row&lt;/td&gt;&lt;/tr&gt;\n    &lt;/tbody&gt;&lt;/table&gt;\n    &lt;div class=\&quot;bgimg\&quot;&gt;&lt;p style=\&quot;background:url(data:image/png;base64,SANITIZED_CAPTURE_PNG_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB9876543210) no-repeat\&quot;&gt;Signature Valid&lt;/p&gt;&lt;/div&gt;\n  &lt;/div&gt;\n&lt;/div&gt;\n&lt;/body&gt;&lt;/html&gt;&quot;,&quot;cusType&quot;:&quot;0&quot;,&quot;clientNotSign&quot;:&quot;True&quot;,&quot;idInvoice&quot;:10613554,&quot;pattern&quot;:&quot;1C24TYS&quot;}"/>
+<script type="text/javascript">
+function showInv(str, cusType, clientNotSign, idInvoice, pattern, fKey, attachFile, status, rowPerPage, data, token) {
+  if (str == '') return;
+}
+$(document).ready(function() {
+  var data = JSON.parse(document.getElementById('InvData').value);
+  var model = {
+    IsAutoRow: true,
+    IsRowPerPage: false,
+    DiffRowBreaking: 250,
+    DiffFooterBreaking: 0,
+    DiffEmptyRowAppended: 50,
+    IsAppendEmptyRow: true,
+    Layout: 1,
+    toolbarType: '',
+  };
+  showInv(data.str, data.cusType, data.clientNotSign, data.idInvoice, data.pattern,
+    'SANITIZED_FKEY', false, 1, 10, model, 'SANITIZED_SHOWINV_TOKEN_Abc1234567890+/SANITIZED_SHOWINV_TOKEN_XYZ9876543210');
+});
+</script>
+</body></html>

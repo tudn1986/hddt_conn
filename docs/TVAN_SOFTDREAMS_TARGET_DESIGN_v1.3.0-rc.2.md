@@ -222,10 +222,11 @@ Regression hiện có bao phủ:
 - CSRF và safe headers cho local artifact APIs;
 - per-invoice P3 state isolation.
 
-Fixture parser hiện là sanitized production-contract fixture được dựng từ contract
-trong specification. Repository chưa có file capture gốc `sample1.2.txt`; khi
-capture sanitized được cung cấp, fixture này phải được thay/bổ sung bằng capture
-thật và giữ cùng assertions.
+Fixture parser có thêm `tests/fixtures/softdreams/sample1.2.sanitized.html`
+được dựng trực tiếp từ cấu trúc production capture `sample1.2.txt`: giữ shape
+`#InvData`, signature `showInv(data.str, ...)`, model auto-row, embedded JPEG/PNG
+Base64 và vị trí status/rowPerPage; FKey, token và nội dung nhận diện đã được
+sanitize trước khi commit. Raw production capture không được đưa vào repository.
 
 ## 10. Runtime/rollback
 

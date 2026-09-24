@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseSoftdreamsSearchResponse } from '../../src/server/tvan/adapters/softdreams/search-parser.js';
 
@@ -10,6 +11,39 @@ function encodeAttr(value: string): string {
 }
 
 describe('SoftDreams production-contract search parser', () => {
+  it('parses the sanitized sample1.2 production capture shape exactly', () => {
+    const fixture = fs.readFileSync(
+      new URL('../fixtures/softdreams/sample1.2.sanitized.html', import.meta.url),
+      'utf8',
+    );
+    const result = parseSoftdreamsSearchResponse(fixture);
+
+    expect(result.invoiceToken).toBe(
+      'SANITIZED_SHOWINV_TOKEN_Abc1234567890+/SANITIZED_SHOWINV_TOKEN_XYZ9876543210',
+    );
+    expect(result.invoiceHtml).toContain('VATTEMP');
+    expect(result.invoiceHtml).toContain('data:image/jpeg;base64');
+    expect(result.invoiceHtml).toContain('data:image/png;base64');
+    expect(result.invoiceHtml).not.toContain('id="InvData"');
+    expect(result.idInvoice).toBe(10613554);
+    expect(result.pattern).toBe('1C24TYS');
+    expect(result.customerType).toBe('0');
+    expect(result.clientNotSign).toBe(true);
+    expect(result.attachFile).toBe(false);
+    expect(result.status).toBe(1);
+    expect(result.rowPerPage).toBe(10);
+    expect(result.renderModel).toMatchObject({
+      IsAutoRow: true,
+      IsRowPerPage: false,
+      DiffRowBreaking: 250,
+      DiffFooterBreaking: 0,
+      DiffEmptyRowAppended: 50,
+      IsAppendEmptyRow: true,
+      Layout: 1,
+      toolbarType: '',
+    });
+  });
+
   it('parses #InvData + showInv token and never mistakes embedded image base64 for the token', () => {
     const firstImageBase64 = 'A'.repeat(160) + '0123456789';
     const secondImageBase64 = 'B'.repeat(160) + '9876543210';
