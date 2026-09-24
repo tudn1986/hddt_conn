@@ -1,6 +1,7 @@
 import type {
   QueryAutoInput,
   QueryAutoResult,
+  TvanArtifactStatus,
   TvanBatchState,
   TvanBackportAnalysis,
   TvanCaptchaChallenge,
@@ -46,6 +47,9 @@ type ApiError = Error & {
   body?: unknown;
   code?: string;
   retryable?: boolean;
+  retryStage?: string;
+  preserveContext?: boolean;
+  outcomeUnknown?: boolean;
 };
 
 function mutation(method?: string): boolean {
@@ -78,6 +82,9 @@ async function parseError(path: string, res: Response): Promise<ApiError> {
   error.body = body;
   error.code = record?.error ? String(record.error) : undefined;
   error.retryable = record?.retryable === true;
+  error.retryStage = record?.retryStage ? String(record.retryStage) : undefined;
+  error.preserveContext = record?.preserveContext === true;
+  error.outcomeUnknown = record?.outcomeUnknown === true;
   // A 401 from the login endpoint is an authentication failure, not an expired local/GDT session.
   if (res.status === 401 && path !== '/api/auth/login') {
     window.dispatchEvent(new CustomEvent('hddt-session-expired'));
@@ -254,6 +261,29 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ document }),
   }),
+  prepareTvanPdfArtifact: (document: unknown) => request<TvanArtifactInfo>('/api/tvan/pdf/prepare-artifact', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }),
+  tvanPdfStatus: (document: unknown) => request<TvanArtifactStatus>('/api/tvan/pdf/status', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }),
+  downloadTvanPdf: (document: unknown) => rawRequest('/api/tvan/pdf/download', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }).then(async (res) => ({
+    blob: await res.blob(),
+    fileName: fileNameFromDisposition(res.headers.get('content-disposition')) || `HDDT_${Date.now()}.pdf`,
+  })),
+  downloadTvanOriginalArtifact: (document: unknown) => rawRequest('/api/tvan/artifact/download-original', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }).then(async (res) => ({
+    blob: await res.blob(),
+    fileName: fileNameFromDisposition(res.headers.get('content-disposition')) || `HDDT_${Date.now()}`,
+    contentType: res.headers.get('content-type') || 'application/octet-stream',
+  })),
   downloadTvanOriginal: (document: unknown) => rawRequest('/api/tvan/file/download', {
     method: 'POST',
     body: JSON.stringify({ document }),

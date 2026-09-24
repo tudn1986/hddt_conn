@@ -151,13 +151,38 @@ export interface TvanSupervisedPrepareResult {
   preparedAt: string;
 }
 
+export type TvanArtifactStage =
+  | 'new'
+  | 'captcha_ready'
+  | 'search_verified'
+  | 'representation_ready'
+  | 'artifact_descriptor_ready'
+  | 'original_ready'
+  | 'pdf_ready';
+
 export interface TvanCaptchaVerificationResult {
   ok: true;
   providerCode: string;
   batchId?: string;
   verificationRequest?: TvanRequestTrace;
   tokenExpiresAt?: string;
+  stage?: TvanArtifactStage;
+  contextExpiresAt?: string;
   verifiedAt: string;
+}
+
+export interface TvanArtifactStatus {
+  providerCode: string;
+  stage: TvanArtifactStage;
+  ready: boolean;
+  canRetryPrepare: boolean;
+  canView: boolean;
+  canDownloadPdf: boolean;
+  canDownloadOriginal: boolean;
+  expiresAt?: string;
+  originalKind?: 'pdf' | 'zip';
+  originalFileName?: string;
+  pdfFileName?: string;
 }
 
 export interface TvanDownloadRequestPlan {

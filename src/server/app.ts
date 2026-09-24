@@ -14,6 +14,7 @@ import { SessionRegistry, SESSION_COOKIE, INSECURE_SESSION_COOKIE, parseCookie, 
 import { SettingsService } from './services/settings.service.js';
 import { TvanCatalogService } from './services/tvan-catalog.service.js';
 import { TvanBackportService } from './tvan/backport.service.js';
+import { closeSoftdreamsRenderer } from './tvan/adapters/softdreams/representation-renderer.js';
 import { registerAuthRoutes } from './routes/auth.routes.js';
 import { registerAdminRoutes } from './routes/admin.routes.js';
 import { registerDatasetRoutes } from './routes/dataset.routes.js';
@@ -223,6 +224,7 @@ export async function buildApp(options: BuildAppOptions = {}) {
         ? publicErrorMessage(error)
         : statusCode < 500 ? 'Yêu cầu không hợp lệ.' : publicErrorMessage(error),
       retryable: error instanceof AppError ? error.retryable : false,
+      ...(error instanceof AppError ? error.publicDetails : undefined),
     });
   });
 
@@ -297,6 +299,7 @@ export async function buildApp(options: BuildAppOptions = {}) {
   app.addHook('onClose', async () => {
     tvanCatalog.close();
     await sessions.close();
+    await closeSoftdreamsRenderer();
   });
   return { app, settings, sessions };
 }

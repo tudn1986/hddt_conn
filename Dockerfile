@@ -18,9 +18,10 @@ ENV NODE_ENV=production \
     HDDT_FIXED_PORT=1 \
     HDDT_NO_OPEN_BROWSER=1 \
     HDDT_APP_DATA_DIR=/data/app \
-    HDDT_DATA_ROOT=/tmp/disabled-business-data
+    HDDT_DATA_ROOT=/tmp/disabled-business-data \
+    HDDT_CHROMIUM_EXECUTABLE=/usr/bin/chromium
 RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates tzdata \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates tzdata chromium fonts-liberation \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /data/app /tmp/disabled-business-data \
  && chown -R node:node /data /tmp/disabled-business-data /app

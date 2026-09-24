@@ -17,8 +17,12 @@ import type {
   TvanChallengeResult,
   TvanOriginalFileResult,
   TvanPdfResult,
+  TvanPreparedArtifact,
   TvanTokenState,
 } from '../types.js';
+import type { TvanArtifactStatus } from '../../../shared/models/index.js';
+import { parseSoftdreamsSearchResponse, type SoftdreamsSearchResult } from './softdreams/search-parser.js';
+import { renderSoftdreamsRepresentation } from './softdreams/representation-renderer.js';
 
 const PROVIDER_TAX_CODE = '0105987432';
 const CAPTCHA_PATH = '/Captcha/Show';
@@ -42,37 +46,41 @@ interface SoftdreamsLookup {
 
 interface SoftdreamsChallengeState extends SoftdreamsLookup {
   documentKey: string;
+  pageUrl: string;
   cookieHeader?: string;
 }
-
-type SoftdreamsPrepareMode = 'pdf_and_attach' | 'pdf_only';
 
 type SoftdreamsArtifactType = 'pdf' | 'zip';
 
-interface SoftdreamsSearchArtifact {
-  token: string;
-  invoiceHtml: string;
-  htmlBase64: string;
-  toolbarType?: string;
-  prepareMode: SoftdreamsPrepareMode;
-}
+type SoftdreamsTransactionStage =
+  | 'search_verified'
+  | 'representation_ready'
+  | 'artifact_descriptor_ready'
+  | 'original_ready'
+  | 'pdf_ready';
 
-interface SoftdreamsDownloadState extends SoftdreamsLookup {
-  version: 1;
+interface SoftdreamsTransactionState {
+  version: 2;
+  providerCode: 'tvan_softdreams';
   documentKey: string;
-  downloadUrl: string;
-  fileGuid: string;
-  fileName: string;
+  stage: SoftdreamsTransactionStage;
+  lookup: SoftdreamsLookup;
+  pageUrl: string;
   cookieHeader?: string;
-  prepareMode?: SoftdreamsPrepareMode;
-}
-
-export interface SoftdreamsArtifactDownload {
-  original: Buffer;
-  originalFileName: string;
-  originalContentType: 'application/pdf' | 'application/zip';
-  pdf: Buffer;
-  pdfFileName: string;
+  search: SoftdreamsSearchResult;
+  representation?: {
+    html: string;
+    pageCount: number;
+    renderer: 'row' | 'chromium';
+    renderedAt: number;
+  };
+  descriptor?: {
+    fileGuid: string;
+    fileName: string;
+    downloadUrl: string;
+    preparedAt: number;
+  };
+  expiresAt: number;
 }
 
 function normalizedHostSellerTaxCode(document: InvoiceDocument): string | undefined {
@@ -253,25 +261,6 @@ function imageMimeType(contentType: string, bytes: Buffer): string | undefined {
   return undefined;
 }
 
-function htmlDecode(value: string): string {
-  return value
-    .replace(/&amp;/gi, '&')
-    .replace(/&#x2f;/gi, '/')
-    .replace(/&#47;/g, '/')
-    .replace(/&#x2b;/gi, '+')
-    .replace(/&#43;/g, '+')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/g, "'");
-}
-
-function normalizeToken(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  let token = htmlDecode(value.trim()).replace(/\\\//g, '/');
-  try { token = decodeURIComponent(token); } catch { /* not URI encoded */ }
-  if (token.length < 20 || token.length > 2_048 || /[\s<>]/.test(token)) return undefined;
-  return token;
-}
-
 function deepStringField(value: unknown, names: string[], depth = 0): string | undefined {
   if (depth > 6 || value === null || value === undefined) return undefined;
   if (Array.isArray(value)) {
@@ -296,230 +285,76 @@ function deepStringField(value: unknown, names: string[], depth = 0): string | u
   return undefined;
 }
 
-function extractTokenFromText(text: string): string | undefined {
-  let json: unknown;
-  try { json = JSON.parse(text); } catch { json = undefined; }
-  const jsonToken = json ? normalizeToken(deepStringField(json, ['token', 'invoiceToken', 'invToken'])) : undefined;
-  if (jsonToken) return jsonToken;
-
-  const patterns = [
-    /<input[^>]+name=["']token["'][^>]+value=["']([^"']+)["']/i,
-    /<input[^>]+value=["']([^"']+)["'][^>]+name=["']token["']/i,
-    /(?:data-token|token)\s*=\s*["']([^"']+)["']/i,
-    /["']token["']\s*:\s*["']([^"']+)["']/i,
-    /(?:ViewFromEmail|GetInvoice)\?token=([^&"'<>\s]+)/i,
-    /DownloadPdfAndFileAttachFromAvailableHtml[\s\S]{0,600}?["']([A-Za-z0-9+/_=%-]{20,2048})["']/i,
-  ];
-  for (const pattern of patterns) {
-    const candidate = normalizeToken(pattern.exec(text)?.[1]);
-    if (candidate) return candidate;
-  }
-
-  // Last-resort scan for a base64-like opaque token. Require mixed case/digits and a long value
-  // to avoid accidentally selecting CSS classes or ordinary words.
-  for (const match of text.matchAll(/[A-Za-z0-9+/]{80,512}={0,2}/g)) {
-    const candidate = match[0];
-    if (/[A-Z]/.test(candidate) && /[a-z]/.test(candidate) && /[0-9]/.test(candidate)) return candidate;
-  }
-  return undefined;
-}
-
-function looksLikeHtml(value: string): boolean {
-  const trimmed = value.trimStart().toLocaleLowerCase();
-  return trimmed.startsWith('<') || trimmed.includes('<html') || trimmed.includes('<div') || trimmed.includes('<meta');
-}
-
-function decodedHtmlCandidate(value: string): string | undefined {
-  const normalized = htmlDecode(value).replace(/\\\//g, '/').trim();
-  if (!normalized) return undefined;
-  if (looksLikeHtml(normalized)) return normalized;
-  const compact = normalized.replace(/\s+/g, '');
-  if (compact.length >= 40 && /^[A-Za-z0-9+/=_-]+$/.test(compact)) {
-    try {
-      const decoded = Buffer.from(compact.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
-      if (looksLikeHtml(decoded)) return decoded;
-    } catch { /* not base64 HTML */ }
-  }
-  return undefined;
-}
-
-function collectHtmlCandidates(value: unknown, out: string[], depth = 0): void {
-  if (depth > 8 || value === null || value === undefined) return;
-  if (typeof value === 'string') {
-    const candidate = decodedHtmlCandidate(value);
-    if (candidate) out.push(candidate);
-    return;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) collectHtmlCandidates(item, out, depth + 1);
-    return;
-  }
-  if (!isRecord(value)) return;
-  for (const child of Object.values(value)) collectHtmlCandidates(child, out, depth + 1);
-}
-
-function searchHtmlBase64(text: string): string {
-  const candidates: string[] = [];
-  let json: unknown;
-  try { json = JSON.parse(text); } catch { json = undefined; }
-  if (json !== undefined) collectHtmlCandidates(json, candidates);
-
-  const direct = decodedHtmlCandidate(text);
-  if (direct) candidates.push(direct);
-
-  // Prefer the largest HTML fragment: the browser capture sends the rendered invoice
-  // HTML, not the JSON envelope around it. This also supports deployments that rename
-  // the JSON field containing the HTML fragment.
-  candidates.sort((left, right) => right.length - left.length);
-  const html = candidates[0];
-  if (!html) {
-    throw new AppError(
-      'TVAN_SOFTDREAMS_HTML_NOT_FOUND',
-      'SoftDreams đã trả token nhưng backend không tìm thấy HTML bản thể hiện để tạo file tải.',
-      502,
-      true,
-    );
-  }
-  return Buffer.from(html, 'utf8').toString('base64');
-}
-
-function decodeSoftdreamsHtmlEntities(value: string): string {
-  return value
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&#x27;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&#x2f;|&#47;/gi, '/')
-    .replace(/&#x2b;|&#43;/gi, '+')
-    .replace(/&amp;/gi, '&');
-}
-
-function inputValueByIdOrName(text: string, field: string): string | undefined {
-  const tags = text.match(/<input\b[^>]*>/gi) || [];
-  const target = field.toLocaleLowerCase();
-  for (const tag of tags) {
-    const id = /\bid\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2]?.toLocaleLowerCase();
-    const name = /\bname\s*=\s*(["'])(.*?)\1/i.exec(tag)?.[2]?.toLocaleLowerCase();
-    if (id !== target && name !== target) continue;
-    const match = /\bvalue\s*=\s*(["'])([\s\S]*?)\1/i.exec(tag);
-    if (match) return decodeSoftdreamsHtmlEntities(match[2]);
-  }
-  return undefined;
-}
-
-function readJsonStringAt(text: string, start: number): string | undefined {
-  if (text[start] !== '"') return undefined;
-  for (let i = start + 1; i < text.length; i += 1) {
-    if (text[i] === '\\') {
-      i += 1;
-      continue;
-    }
-    if (text[i] === '"') {
-      try { return JSON.parse(text.slice(start, i + 1)) as string; } catch { return undefined; }
-    }
-  }
-  return undefined;
-}
-
-function scriptStrProperty(text: string): string | undefined {
-  const pattern = /["']str["']\s*:\s*/ig;
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(text))) {
-    const start = match.index + match[0].length;
-    if (text[start] !== '"') continue;
-    const value = readJsonStringAt(text, start);
-    if (value !== undefined) return value;
-  }
-  return undefined;
-}
-
-function extractInvoiceHtml(searchText: string): string {
-  const invData = inputValueByIdOrName(searchText, 'InvData');
-  if (invData) {
-    try {
-      const parsed = JSON.parse(invData) as unknown;
-      const html = deepStringField(parsed, ['str', 'html']);
-      if (html && looksLikeHtml(html)) return html;
-    } catch { /* controlled fallback below */ }
-  }
-
-  try {
-    const parsed = JSON.parse(searchText) as unknown;
-    const html = deepStringField(parsed, ['str', 'html']);
-    if (html && looksLikeHtml(html)) return html;
-  } catch { /* not JSON */ }
-
-  const scriptHtml = scriptStrProperty(searchText);
-  if (scriptHtml && looksLikeHtml(scriptHtml)) return scriptHtml;
-
-  throw new AppError(
-    'TVAN_SOFTDREAMS_HTML_NOT_FOUND',
-    'SoftDreams đã trả kết quả tra cứu nhưng không tìm thấy HTML bản thể hiện.',
-    502,
-    true,
-  );
-}
-
-function extractToolbarType(text: string): string | undefined {
-  const match = /\btoolbarType\s*:\s*["']([^"']*)["']/i.exec(text);
-  return match?.[1]?.trim();
-}
-
-function prepareModeOf(toolbarType: string | undefined): SoftdreamsPrepareMode {
-  return toolbarType?.toLocaleUpperCase() === 'DA_LIEU' ? 'pdf_only' : 'pdf_and_attach';
-}
-
-function parseSearchArtifact(searchText: string): SoftdreamsSearchArtifact {
-  const token = extractTokenFromText(searchText);
-  if (!token) {
-    throw new AppError(
-      'TVAN_SOFTDREAMS_CAPTCHA_OR_TOKEN_FAILED',
-      'SoftDreams chưa trả token hóa đơn. CAPTCHA có thể sai hoặc response schema đã thay đổi.',
-      428,
-      true,
-    );
-  }
-  const invoiceHtml = extractInvoiceHtml(searchText);
-  const toolbarType = extractToolbarType(searchText);
-  return {
-    token,
-    invoiceHtml,
-    htmlBase64: Buffer.from(invoiceHtml, 'utf8').toString('base64'),
-    toolbarType,
-    prepareMode: prepareModeOf(toolbarType),
-  };
-}
-
-function parseDownloadDescriptor(text: string): { fileGuid: string; fileName: string } | undefined {
+function parseDownloadDescriptor(text: string): { fileGuid: string; fileName: string } {
   let value: unknown;
-  try { value = JSON.parse(text); } catch { return undefined; }
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new AppError(
+      'TVAN_SOFTDREAMS_DOWNLOAD_DESCRIPTOR_INVALID',
+      'SoftDreams không trả descriptor JSON hợp lệ.',
+      502,
+      false,
+      undefined,
+      { retryStage: 'prepare_artifact', preserveContext: true },
+    );
+  }
   const fileGuid = deepStringField(value, ['fileGuid', 'guid']);
   const fileName = deepStringField(value, ['fileName', 'filename']);
-  if (!fileGuid || !fileName) return undefined;
-  if (!/^[A-Za-z0-9-]{16,128}$/.test(fileGuid) || /[\\/\u0000-\u001f]/.test(fileName)) return undefined;
+  if (!fileGuid || !fileName) {
+    const providerMessage = deepStringField(value, ['msg', 'message', 'error']);
+    throw new AppError(
+      providerMessage ? 'TVAN_SOFTDREAMS_PREPARE_PROVIDER_ERROR' : 'TVAN_SOFTDREAMS_DOWNLOAD_DESCRIPTOR_INVALID',
+      providerMessage
+        ? 'SoftDreams báo lỗi khi tạo file hóa đơn.'
+        : 'SoftDreams không trả fileGuid/fileName hợp lệ.',
+      502,
+      false,
+      undefined,
+      { retryStage: 'prepare_artifact', preserveContext: true },
+    );
+  }
+  if (
+    !/^[A-Za-z0-9-]{16,128}$/.test(fileGuid)
+    || fileName.length > 255
+    || /[\\/\u0000-\u001f\u007f]/.test(fileName)
+  ) {
+    throw new AppError(
+      'TVAN_SOFTDREAMS_DOWNLOAD_DESCRIPTOR_INVALID',
+      'SoftDreams trả fileGuid/fileName không hợp lệ.',
+      502,
+      false,
+      undefined,
+      { retryStage: 'prepare_artifact', preserveContext: true },
+    );
+  }
   return { fileGuid, fileName };
 }
 
-function serializeState(state: SoftdreamsDownloadState): string {
+function serializeState(state: SoftdreamsTransactionState): string {
   return JSON.stringify(state);
 }
 
-function parseState(token: TvanTokenState | undefined, document: InvoiceDocument): SoftdreamsDownloadState | undefined {
+function parseState(token: TvanTokenState | undefined, document: InvoiceDocument): SoftdreamsTransactionState | undefined {
   if (!token || token.expiresAt <= Date.now()) return undefined;
   try {
-    const parsed = JSON.parse(token.token) as SoftdreamsDownloadState;
+    const parsed = JSON.parse(token.token) as SoftdreamsTransactionState;
     if (
-      parsed?.version === 1
+      parsed?.version === 2
+      && parsed.providerCode === 'tvan_softdreams'
       && parsed.documentKey === document.key
-      && parsed.downloadUrl
-      && parsed.portalHost
-      && parsed.fkey
-      && parsed.fileGuid
-      && parsed.fileName
+      && parsed.lookup?.portalHost
+      && parsed.lookup?.fkey
+      && parsed.search?.invoiceToken
+      && parsed.search?.invoiceHtml
+      && parsed.expiresAt > Date.now()
     ) return parsed;
   } catch { /* not our token state */ }
   return undefined;
+}
+
+function saveState(context: TvanAdapterContext, state: SoftdreamsTransactionState): void {
+  context.setToken({ token: serializeState(state), expiresAt: state.expiresAt });
 }
 
 function publicLookup(lookup: SoftdreamsLookup): Record<string, string> {
@@ -557,6 +392,7 @@ function collectPdfEntries(zip: ZipFile, maxBytes: number): Promise<Entry[]> {
   return new Promise((resolve, reject) => {
     const entries: Entry[] = [];
     let count = 0;
+    let totalPdfBytes = 0;
     const fail = (message: string) => {
       zip.removeAllListeners();
       reject(new AppError('TVAN_SOFTDREAMS_ZIP_UNSAFE', message, 502));
@@ -569,7 +405,14 @@ function collectPdfEntries(zip: ZipFile, maxBytes: number): Promise<Entry[]> {
         fail('ZIP SoftDreams chứa entry không an toàn, mã hóa hoặc quá lớn.');
         return;
       }
-      if (!entry.fileName.endsWith('/') && entry.fileName.toLocaleLowerCase().endsWith('.pdf')) entries.push(entry);
+      if (!entry.fileName.endsWith('/') && entry.fileName.toLocaleLowerCase().endsWith('.pdf')) {
+        totalPdfBytes += entry.uncompressedSize;
+        if (totalPdfBytes > maxBytes) {
+          fail('ZIP SoftDreams chứa tổng dung lượng PDF vượt giới hạn cho phép.');
+          return;
+        }
+        entries.push(entry);
+      }
       zip.readEntry();
     });
     zip.readEntry();
@@ -637,17 +480,16 @@ function safeOriginalFileName(fileName: string, kind: SoftdreamsArtifactType): s
 async function fetchProviderArtifact(
   document: InvoiceDocument,
   context: TvanAdapterContext,
-  lookup: SoftdreamsLookup,
-  state: SoftdreamsDownloadState,
-): Promise<{ content: Buffer; fileName: string; kind: SoftdreamsArtifactType }> {
-  if (state.documentKey !== document.key) {
-    throw new AppError('TVAN_CAPTCHA_REQUIRED', 'Cần xác thực CAPTCHA SoftDreams cho hóa đơn này trước khi tải file.', 428, true);
+  state: SoftdreamsTransactionState,
+): Promise<{ content: Buffer; fileName: string; kind: SoftdreamsArtifactType; cookieHeader?: string }> {
+  if (state.documentKey !== document.key || !state.descriptor) {
+    throw new AppError('TVAN_CAPTCHA_REQUIRED', 'Cần xác thực và chuẩn bị hóa đơn SoftDreams trước khi tải file.', 428, true);
   }
-  const downloaded = await fetchPortal(context, lookup, state.downloadUrl, {
+  const downloaded = await fetchPortal(context, state.lookup, state.descriptor.downloadUrl, {
     method: 'GET',
     headers: {
       Accept: 'application/zip,application/pdf,application/octet-stream,*/*',
-      Referer: endpoint(lookup, SEARCH_PAGE_PATH),
+      Referer: state.pageUrl,
     },
   }, state.cookieHeader);
   if (!downloaded.response.ok) {
@@ -660,7 +502,12 @@ async function fetchProviderArtifact(
   }
   const content = await readLimited(downloaded.response, context.maxDownloadBytes);
   const kind = artifactTypeOf(content);
-  return { content, kind, fileName: safeOriginalFileName(state.fileName, kind) };
+  return {
+    content,
+    kind,
+    fileName: safeOriginalFileName(state.descriptor.fileName, kind),
+    cookieHeader: downloaded.cookieHeader,
+  };
 }
 
 export class SoftdreamsTvanAdapter implements TvanAdapter {
@@ -747,7 +594,7 @@ export class SoftdreamsTvanAdapter implements TvanAdapter {
         Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
         'Cache-Control': 'no-cache',
         Pragma: 'no-cache',
-        Referer: searchPageUrl,
+        Referer: bootstrap.finalUrl,
       },
     }, bootstrap.cookieHeader);
     if (!fetched.response.ok) {
@@ -770,6 +617,7 @@ export class SoftdreamsTvanAdapter implements TvanAdapter {
       privateState: {
         ...lookup,
         documentKey: document.key,
+        pageUrl: bootstrap.finalUrl,
         cookieHeader: fetched.cookieHeader,
       } satisfies SoftdreamsChallengeState,
       trace: {
@@ -788,12 +636,19 @@ export class SoftdreamsTvanAdapter implements TvanAdapter {
     answer: string,
     context: TvanAdapterContext,
   ): Promise<TvanCaptchaVerifyTrace> {
-    if (!isRecord(privateState)) throw new AppError('TVAN_SOFTDREAMS_CHALLENGE_STATE_INVALID', 'Phiên CAPTCHA SoftDreams không hợp lệ.', 409);
+    if (!isRecord(privateState)) {
+      throw new AppError('TVAN_SOFTDREAMS_CHALLENGE_STATE_INVALID', 'Phiên CAPTCHA SoftDreams không hợp lệ.', 409);
+    }
     const lookup = lookupOf(document);
-    const state = privateState as unknown as SoftdreamsChallengeState;
-    if (state.documentKey !== document.key || state.portalHost !== lookup.portalHost || state.fkey !== lookup.fkey) {
+    const challengeState = privateState as unknown as SoftdreamsChallengeState;
+    if (
+      challengeState.documentKey !== document.key
+      || challengeState.portalHost !== lookup.portalHost
+      || challengeState.fkey !== lookup.fkey
+    ) {
       throw new AppError('TVAN_SOFTDREAMS_CHALLENGE_MISMATCH', 'CAPTCHA không thuộc hóa đơn SoftDreams hiện tại.', 409);
     }
+
     const captcha = answer.trim();
     if (!captcha) throw new AppError('TVAN_SOFTDREAMS_CAPTCHA_EMPTY', 'Chưa nhập mã xác thực SoftDreams.', 400);
 
@@ -802,119 +657,267 @@ export class SoftdreamsTvanAdapter implements TvanAdapter {
     const searched = await fetchPortal(context, lookup, searchUrl, {
       method: 'POST',
       headers: {
-        Accept: 'text/html,application/json;q=0.9,*/*;q=0.8',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         Origin: lookup.portalOrigin,
-        Referer: endpoint(lookup, SEARCH_PAGE_PATH),
-        'X-Requested-With': 'XMLHttpRequest',
+        Referer: challengeState.pageUrl,
+        'Upgrade-Insecure-Requests': '1',
       },
       body: searchBody,
-    }, state.cookieHeader);
+    }, challengeState.cookieHeader);
+
     if (!searched.response.ok) {
-      throw new AppError('TVAN_SOFTDREAMS_SEARCH_HTTP_ERROR', `SoftDreams trả HTTP ${searched.response.status} khi tra cứu Fkey.`, 502, searched.response.status >= 500);
-    }
-    const searchBytes = await readLimited(searched.response, context.maxDownloadBytes);
-    const searchText = searchBytes.toString('utf8');
-    const artifact = parseSearchArtifact(searchText);
-    const preparePath = artifact.prepareMode === 'pdf_only' ? PREPARE_PDF_PATH : PREPARE_DOWNLOAD_PATH;
-    const prepareUrl = endpoint(lookup, preparePath);
-    const prepareForm = new URLSearchParams({ token: artifact.token, html: artifact.htmlBase64 });
-    if (artifact.prepareMode === 'pdf_only') prepareForm.set('isImage', 'false');
-    const prepareBody = prepareForm.toString();
-    const prepared = await fetchPortal(context, lookup, prepareUrl, {
-      method: 'POST',
-      headers: {
-        Accept: '*/*',
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        Origin: lookup.portalOrigin,
-        Referer: endpoint(lookup, SEARCH_PAGE_PATH),
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-      body: prepareBody,
-    }, searched.cookieHeader);
-    if (!prepared.response.ok) {
-      const status = prepared.response.status;
-      if (status === 408) {
+      const status = searched.response.status;
+      if ([400, 401, 403, 422].includes(status)) {
         throw new AppError(
-          'TVAN_SOFTDREAMS_PREPARE_DOWNLOAD_TIMEOUT',
-          'SoftDreams quá thời gian xử lý khi tạo file hóa đơn.',
-          504,
-          true,
+          'TVAN_SOFTDREAMS_CAPTCHA_INVALID',
+          'SoftDreams không chấp nhận mã CAPTCHA hoặc thông tin tra cứu.',
+          422,
         );
       }
-      throw new AppError('TVAN_SOFTDREAMS_PREPARE_DOWNLOAD_HTTP_ERROR', `SoftDreams trả HTTP ${status} khi tạo file tải.`, 502, status >= 500);
-    }
-    const prepareBytes = await readLimited(prepared.response, Math.min(context.maxDownloadBytes, 2 * 1024 * 1024));
-    const descriptor = parseDownloadDescriptor(prepareBytes.toString('utf8'));
-    if (!descriptor) {
-      throw new AppError('TVAN_SOFTDREAMS_DOWNLOAD_DESCRIPTOR_INVALID', 'SoftDreams không trả fileGuid/fileName hợp lệ.', 502, true);
+      throw new AppError(
+        'TVAN_SOFTDREAMS_SEARCH_HTTP_ERROR',
+        `SoftDreams trả HTTP ${status} khi tra cứu Fkey.`,
+        502,
+        status >= 500,
+      );
     }
 
-    const download = new URL(endpoint(lookup, DOWNLOAD_PATH));
-    download.searchParams.set('fileGuid', descriptor.fileGuid);
-    download.searchParams.set('fileName', descriptor.fileName);
+    const searchBytes = await readLimited(searched.response, context.maxDownloadBytes);
+    const searchResult = parseSoftdreamsSearchResponse(searchBytes.toString('utf8'));
     const expiresAt = Date.now() + SESSION_TTL_MS;
-    const downloadState: SoftdreamsDownloadState = {
-      version: 1,
+    const transaction: SoftdreamsTransactionState = {
+      version: 2,
+      providerCode: 'tvan_softdreams',
       documentKey: document.key,
-      ...lookup,
-      downloadUrl: download.toString(),
-      fileGuid: descriptor.fileGuid,
-      fileName: descriptor.fileName,
-      cookieHeader: prepared.cookieHeader,
-      prepareMode: artifact.prepareMode,
+      stage: 'search_verified',
+      lookup,
+      pageUrl: searched.finalUrl,
+      cookieHeader: searched.cookieHeader,
+      search: searchResult,
+      expiresAt,
     };
-    context.setToken({ token: serializeState(downloadState), expiresAt });
+    saveState(context, transaction);
 
     const request: TvanRequestTrace = {
       endpoint: searchUrl,
       method: 'POST',
-      requestBody: new URLSearchParams({ typeSearch: '', FKey: lookup.fkey, Capcha: '[user-entered-captcha]' }).toString(),
+      requestBody: new URLSearchParams({
+        typeSearch: '',
+        FKey: lookup.fkey,
+        Capcha: '[user-entered-captcha]',
+      }).toString(),
       responseStatus: searched.response.status,
       responseContentType: searched.response.headers.get('content-type') || undefined,
     };
-    return { request, tokenExpiresAt: new Date(expiresAt).toISOString() };
+    const expiry = new Date(expiresAt).toISOString();
+    return {
+      request,
+      tokenExpiresAt: expiry,
+      stage: 'search_verified',
+      contextExpiresAt: expiry,
+    };
+  }
+
+  artifactStatus(document: InvoiceDocument, context: TvanAdapterContext): TvanArtifactStatus {
+    const state = parseState(context.token, document);
+    if (!state) {
+      return {
+        providerCode: this.providerCode,
+        stage: 'new',
+        ready: false,
+        canRetryPrepare: false,
+        canView: false,
+        canDownloadPdf: false,
+        canDownloadOriginal: false,
+      };
+    }
+    return {
+      providerCode: this.providerCode,
+      stage: state.stage,
+      ready: state.stage === 'pdf_ready',
+      canRetryPrepare: ['search_verified', 'representation_ready', 'artifact_descriptor_ready'].includes(state.stage),
+      canView: state.stage === 'pdf_ready',
+      canDownloadPdf: state.stage === 'pdf_ready',
+      canDownloadOriginal: ['original_ready', 'pdf_ready'].includes(state.stage),
+      expiresAt: new Date(state.expiresAt).toISOString(),
+      originalFileName: state.descriptor?.fileName,
+    };
   }
 
   describeDownloadRequest(document: InvoiceDocument, context: TvanAdapterContext): TvanDownloadRequestPlan {
     const lookup = lookupOf(document);
     const state = parseState(context.token, document);
-    if (state) {
-      return {
-        providerCode: this.providerCode,
-        displayName: this.displayName,
-        lookup: {
-          ...publicLookup(lookup),
-          fileGuid: state.fileGuid,
-          fileName: state.fileName,
-          archiveFormat: state.fileName.toLocaleLowerCase().endsWith('.zip') ? 'ZIP' : 'FILE',
-        },
-        endpoint: state.downloadUrl,
-        method: 'GET',
-        tokenReady: true,
-        tokenExpiresAt: new Date(context.token!.expiresAt).toISOString(),
-        plannedAt: new Date().toISOString(),
-      };
-    }
     return {
       providerCode: this.providerCode,
       displayName: this.displayName,
       lookup: publicLookup(lookup),
-      endpoint: endpoint(lookup, PREPARE_DOWNLOAD_PATH),
+      endpoint: '/api/tvan/pdf/prepare-artifact',
       method: 'POST',
-      requestBody: 'token=[backend-private-search-token]&html=[backend-private-invoice-html-base64]',
-      tokenReady: false,
+      requestBody: state
+        ? '[backend-private SoftDreams transaction]'
+        : '[CAPTCHA/Search required before artifact preparation]',
+      tokenReady: Boolean(state),
+      tokenExpiresAt: state ? new Date(state.expiresAt).toISOString() : undefined,
       plannedAt: new Date().toISOString(),
     };
   }
 
-  async downloadOriginal(document: InvoiceDocument, context: TvanAdapterContext): Promise<TvanOriginalFileResult> {
-    const lookup = lookupOf(document);
-    const state = parseState(context.token, document);
+  async prepareArtifact(document: InvoiceDocument, context: TvanAdapterContext): Promise<TvanPreparedArtifact> {
+    let state = parseState(context.token, document);
     if (!state) {
-      throw new AppError('TVAN_CAPTCHA_REQUIRED', 'Cần xác thực CAPTCHA SoftDreams cho hóa đơn này trước khi tải file.', 428, true);
+      throw new AppError(
+        'TVAN_CAPTCHA_REQUIRED',
+        'Cần xác thực CAPTCHA SoftDreams cho hóa đơn này trước khi tạo bản thể hiện.',
+        428,
+        true,
+      );
     }
-    const artifact = await fetchProviderArtifact(document, context, lookup, state);
+
+    if (!state.representation) {
+      const rendered = await renderSoftdreamsRepresentation(state.search);
+      state = {
+        ...state,
+        stage: 'representation_ready',
+        representation: {
+          html: rendered.html,
+          pageCount: rendered.pageCount,
+          renderer: rendered.renderer,
+          renderedAt: Date.now(),
+        },
+      };
+      saveState(context, state);
+    }
+    const representation = state.representation;
+    if (!representation) {
+      throw new AppError('TVAN_SOFTDREAMS_RENDER_FAILED', 'Không tạo được representation SoftDreams.', 502, true);
+    }
+
+    if (!state.descriptor) {
+      const isDataToolbar = state.search.renderModel.toolbarType.toLocaleUpperCase() === 'DA_LIEU';
+      const preparePath = isDataToolbar ? PREPARE_PDF_PATH : PREPARE_DOWNLOAD_PATH;
+      const prepareUrl = endpoint(state.lookup, preparePath);
+      const form = new URLSearchParams({
+        token: state.search.invoiceToken,
+        html: Buffer.from(representation.html, 'utf8').toString('base64'),
+      });
+      if (isDataToolbar) form.set('isImage', 'false');
+
+      const prepared = await fetchPortal(context, state.lookup, prepareUrl, {
+        method: 'POST',
+        headers: {
+          Accept: '*/*',
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          Origin: state.lookup.portalOrigin,
+          Referer: state.pageUrl,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: form.toString(),
+      }, state.cookieHeader);
+
+      if (!prepared.response.ok) {
+        const status = prepared.response.status;
+        if (status === 408) {
+          throw new AppError(
+            'TVAN_SOFTDREAMS_PREPARE_DOWNLOAD_TIMEOUT',
+            'SoftDreams quá thời gian xử lý khi tạo file hóa đơn.',
+            504,
+            true,
+            undefined,
+            {
+              retryMode: 'manual',
+              retryStage: 'prepare_artifact',
+              preserveContext: true,
+              outcomeUnknown: true,
+            },
+          );
+        }
+        throw new AppError(
+          'TVAN_SOFTDREAMS_PREPARE_DOWNLOAD_HTTP_ERROR',
+          `SoftDreams trả HTTP ${status} khi tạo file tải.`,
+          502,
+          status >= 500,
+          undefined,
+          {
+            retryMode: 'manual',
+            retryStage: 'prepare_artifact',
+            preserveContext: true,
+          },
+        );
+      }
+
+      const prepareBytes = await readLimited(
+        prepared.response,
+        Math.min(context.maxDownloadBytes, 2 * 1024 * 1024),
+      );
+      const descriptor = parseDownloadDescriptor(prepareBytes.toString('utf8'));
+
+      const downloadUrl = new URL(endpoint(state.lookup, DOWNLOAD_PATH));
+      downloadUrl.searchParams.set('fileGuid', descriptor.fileGuid);
+      downloadUrl.searchParams.set('fileName', descriptor.fileName);
+      state = {
+        ...state,
+        stage: 'artifact_descriptor_ready',
+        cookieHeader: prepared.cookieHeader,
+        descriptor: {
+          ...descriptor,
+          downloadUrl: downloadUrl.toString(),
+          preparedAt: Date.now(),
+        },
+      };
+      saveState(context, state);
+    }
+
+    const original = await fetchProviderArtifact(document, context, state);
+    state = {
+      ...state,
+      stage: 'original_ready',
+      cookieHeader: original.cookieHeader || state.cookieHeader,
+    };
+    saveState(context, state);
+
+    let result: TvanPreparedArtifact;
+    if (original.kind === 'pdf') {
+      ensurePdf(original.content);
+      const pdfFileName = safePdfFileName(original.fileName);
+      result = {
+        original: original.content,
+        originalFileName: original.fileName,
+        originalContentType: 'application/pdf',
+        pdf: original.content,
+        pdfFileName,
+      };
+    } else {
+      const extracted = await extractPdfFromZip(
+        original.content,
+        original.fileName,
+        context.maxDownloadBytes,
+      );
+      result = {
+        original: original.content,
+        originalFileName: original.fileName,
+        originalContentType: 'application/zip',
+        pdf: extracted.content,
+        pdfFileName: extracted.fileName,
+      };
+    }
+
+    state = { ...state, stage: 'pdf_ready' };
+    saveState(context, state);
+    return result;
+  }
+
+  async downloadOriginal(document: InvoiceDocument, context: TvanAdapterContext): Promise<TvanOriginalFileResult> {
+    const state = parseState(context.token, document);
+    if (!state?.descriptor) {
+      throw new AppError(
+        'TVAN_CAPTCHA_REQUIRED',
+        'Cần xác thực và chuẩn bị hóa đơn SoftDreams trước khi tải file gốc.',
+        428,
+        true,
+      );
+    }
+    const artifact = await fetchProviderArtifact(document, context, state);
     return {
       content: artifact.content,
       fileName: artifact.fileName,
@@ -922,32 +925,16 @@ export class SoftdreamsTvanAdapter implements TvanAdapter {
     };
   }
 
-  async downloadArtifact(document: InvoiceDocument, context: TvanAdapterContext): Promise<SoftdreamsArtifactDownload> {
-    const original = await this.downloadOriginal(document, context);
-    if (original.contentType === 'application/pdf') {
-      ensurePdf(original.content);
-      const pdfFileName = safePdfFileName(original.fileName);
-      return {
-        original: original.content,
-        originalFileName: original.fileName,
-        originalContentType: 'application/pdf',
-        pdf: original.content,
-        pdfFileName,
-      };
-    }
-
-    const extracted = await extractPdfFromZip(original.content, original.fileName, context.maxDownloadBytes);
-    return {
-      original: original.content,
-      originalFileName: original.fileName,
-      originalContentType: 'application/zip',
-      pdf: extracted.content,
-      pdfFileName: extracted.fileName,
-    };
+  async downloadArtifact(document: InvoiceDocument, context: TvanAdapterContext): Promise<TvanPreparedArtifact> {
+    return this.prepareArtifact(document, context);
   }
 
   async downloadPdf(document: InvoiceDocument, context: TvanAdapterContext): Promise<TvanPdfResult> {
-    const artifact = await this.downloadArtifact(document, context);
-    return { content: artifact.pdf, contentType: 'application/pdf', fileName: artifact.pdfFileName };
+    const artifact = await this.prepareArtifact(document, context);
+    return {
+      content: artifact.pdf,
+      contentType: 'application/pdf',
+      fileName: artifact.pdfFileName,
+    };
   }
 }

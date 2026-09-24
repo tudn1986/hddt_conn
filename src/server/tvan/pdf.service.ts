@@ -5,6 +5,7 @@ import os from 'node:os';
 import yazl from 'yazl';
 import type {
   InvoiceDocument,
+  TvanArtifactStatus,
   TvanBatchState,
   TvanCaptchaChallenge,
   TvanCaptchaVerificationResult,
@@ -27,6 +28,18 @@ type PendingChallenge = {
   document: InvoiceDocument;
   batchId?: string;
   createdAt: number;
+};
+
+type CachedArtifact = {
+  id: string;
+  cacheKey: string;
+  providerCode: string;
+  original: Buffer;
+  originalFileName: string;
+  originalContentType: 'application/pdf' | 'application/zip';
+  pdf: Buffer;
+  pdfFileName: string;
+  expiresAt: number;
 };
 
 type BatchInternal = {
@@ -65,7 +78,9 @@ export class TvanPdfService {
   private readonly tokens = new Map<string, TvanTokenState>();
   private readonly challenges = new Map<string, PendingChallenge>();
   private readonly batches = new Map<string, BatchInternal>();
-  private readonly artifacts = new Map<string, any>();
+  private readonly artifacts = new Map<string, CachedArtifact>();
+  private readonly artifactCache = new Map<string, CachedArtifact>();
+  private readonly inflightArtifacts = new Map<string, Promise<CachedArtifact>>();
   private readonly batchRoot: string;
   private readonly maxBatchBytes: number;
   private readonly artifactTtlMs: number;
@@ -103,9 +118,31 @@ export class TvanPdfService {
     return [...byKey.values()];
   }
 
+  private documentFingerprint(document: InvoiceDocument): string {
+    return sha256Buffer(Buffer.from(JSON.stringify({
+      key: document.key,
+      providerCode: document.providerCode || document.lookup?.providerCode || '',
+      direction: document.direction,
+      invoiceSource: document.invoiceSource,
+      sellerTaxCode: document.seller?.taxCode || '',
+      templateNo: document.templateNo ?? '',
+      series: document.series || '',
+      invoiceNo: document.invoiceNo ?? '',
+      issueDate: document.issueDate || '',
+      lookupCode: document.lookup?.lookupCode || '',
+      lookupBaseUrl: document.lookup?.lookupBaseUrl || '',
+    }), 'utf8'));
+  }
+
+  private artifactCacheKey(adapter: TvanAdapter, document: InvoiceDocument): string {
+    return `${adapter.providerCode}|${this.documentFingerprint(document)}`;
+  }
+
   private tokenKey(adapter: TvanAdapter, document?: InvoiceDocument): string {
     if (adapter.captchaMode === 'per_invoice') {
-      return `${adapter.providerCode}|${document?.key || '__missing_document__'}`;
+      return document
+        ? this.artifactCacheKey(adapter, document)
+        : `${adapter.providerCode}|__missing_document__`;
     }
     return adapter.providerCode;
   }
@@ -136,6 +173,67 @@ export class TvanPdfService {
     };
   }
 
+  private cachedArtifact(adapter: TvanAdapter, document: InvoiceDocument): CachedArtifact | undefined {
+    const key = this.artifactCacheKey(adapter, document);
+    const cached = this.artifactCache.get(key);
+    if (!cached) return undefined;
+    if (cached.expiresAt <= Date.now()) {
+      this.artifactCache.delete(key);
+      this.artifacts.delete(cached.id);
+      return undefined;
+    }
+    return cached;
+  }
+
+  private async ensureArtifact(adapter: TvanAdapter, document: InvoiceDocument): Promise<CachedArtifact> {
+    const cached = this.cachedArtifact(adapter, document);
+    if (cached) return cached;
+
+    const cacheKey = this.artifactCacheKey(adapter, document);
+    const running = this.inflightArtifacts.get(cacheKey);
+    if (running) return running;
+
+    const operation = (async () => {
+      const context = this.context(adapter, document);
+      const prepared = adapter.prepareArtifact
+        ? await adapter.prepareArtifact(document, context)
+        : await adapter.downloadPdf(document, context).then((pdf) => ({
+          original: pdf.content,
+          originalFileName: pdf.fileName,
+          originalContentType: 'application/pdf' as const,
+          pdf: pdf.content,
+          pdfFileName: pdf.fileName,
+        }));
+      const id = generateId();
+      const artifact: CachedArtifact = {
+        ...prepared,
+        id,
+        cacheKey,
+        providerCode: adapter.providerCode,
+        expiresAt: Date.now() + this.artifactTtlMs,
+      };
+      this.artifactCache.set(cacheKey, artifact);
+      this.artifacts.set(id, artifact);
+      return artifact;
+    })().finally(() => {
+      this.inflightArtifacts.delete(cacheKey);
+    });
+
+    this.inflightArtifacts.set(cacheKey, operation);
+    return operation;
+  }
+
+  private artifactInfo(artifact: CachedArtifact) {
+    return {
+      id: artifact.id,
+      providerCode: artifact.providerCode,
+      originalFileName: artifact.originalFileName,
+      originalContentType: artifact.originalContentType,
+      pdfFileName: artifact.pdfFileName,
+      expiresAt: new Date(artifact.expiresAt).toISOString(),
+    };
+  }
+
   async prepareView(document: InvoiceDocument): Promise<{
     capability: TvanProviderCapability;
     ready: boolean;
@@ -144,6 +242,7 @@ export class TvanPdfService {
     const adapter = this.registry.resolve(document);
     const capability = this.registry.capability(document);
     if (!adapter || !capability.supported) return { capability, ready: false };
+    if (this.cachedArtifact(adapter, document)) return { capability, ready: true };
     if (adapter.captchaMode === 'none' || this.tokenFor(adapter, document)) return { capability, ready: true };
     const challenge = await this.createChallenge(adapter, document);
     return { capability, ready: false, challenge };
@@ -270,8 +369,54 @@ export class TvanPdfService {
       batchId: pending.batchId,
       verificationRequest: verification?.request,
       tokenExpiresAt: verification?.tokenExpiresAt,
+      stage: verification?.stage,
+      contextExpiresAt: verification?.contextExpiresAt,
       verifiedAt: new Date().toISOString(),
     };
+  }
+
+  artifactStatus(document: InvoiceDocument): TvanArtifactStatus {
+    this.ensureActive();
+    const adapter = this.registry.resolve(document);
+    const capability = this.registry.capability(document);
+    if (!adapter || !capability.supported) {
+      return {
+        providerCode: capability.providerCode,
+        stage: 'new',
+        ready: false,
+        canRetryPrepare: false,
+        canView: false,
+        canDownloadPdf: false,
+        canDownloadOriginal: false,
+      };
+    }
+    const cached = this.cachedArtifact(adapter, document);
+    if (cached) {
+      return {
+        providerCode: adapter.providerCode,
+        stage: 'pdf_ready',
+        ready: true,
+        canRetryPrepare: false,
+        canView: true,
+        canDownloadPdf: true,
+        canDownloadOriginal: true,
+        expiresAt: new Date(cached.expiresAt).toISOString(),
+        originalKind: cached.originalContentType === 'application/zip' ? 'zip' : 'pdf',
+        originalFileName: cached.originalFileName,
+        pdfFileName: cached.pdfFileName,
+      };
+    }
+    return adapter.artifactStatus
+      ? adapter.artifactStatus(document, this.context(adapter, document))
+      : {
+        providerCode: adapter.providerCode,
+        stage: 'new',
+        ready: false,
+        canRetryPrepare: false,
+        canView: false,
+        canDownloadPdf: false,
+        canDownloadOriginal: false,
+      };
   }
 
   async prepareArtifact(document: InvoiceDocument) {
@@ -281,28 +426,7 @@ export class TvanPdfService {
     if (!adapter || !capability.supported) {
       throw new AppError('TVAN_ARTIFACT_UNSUPPORTED', capability.reason || 'TVAN chưa hỗ trợ chuẩn bị file hóa đơn.', 422);
     }
-    const context = this.context(adapter, document);
-      const extended = adapter as any;
-      const downloaded = typeof extended.downloadArtifact === 'function'
-        ? await extended.downloadArtifact(document, context)
-        : await adapter.downloadPdf(document, context).then((pdf) => ({
-          original: pdf.content,
-          originalFileName: pdf.fileName,
-          originalContentType: 'application/pdf',
-          pdf: pdf.content,
-          pdfFileName: pdf.fileName,
-        }));
-      const id = generateId();
-      const expiresAt = Date.now() + this.artifactTtlMs;
-      this.artifacts.set(id, { ...downloaded, id, providerCode: adapter.providerCode, expiresAt });
-      return {
-        id,
-        providerCode: adapter.providerCode,
-        originalFileName: downloaded.originalFileName,
-        originalContentType: downloaded.originalContentType,
-        pdfFileName: downloaded.pdfFileName,
-        expiresAt: new Date(expiresAt).toISOString(),
-      };
+    return this.artifactInfo(await this.ensureArtifact(adapter, document));
   }
 
   async downloadOriginal(document: InvoiceDocument): Promise<TvanOriginalFileResult> {
@@ -312,18 +436,27 @@ export class TvanPdfService {
     if (!adapter || !capability.supported) {
       throw new AppError('TVAN_FILE_UNSUPPORTED', capability.reason || 'TVAN chưa hỗ trợ tải file gốc.', 422);
     }
+    if (adapter.prepareArtifact) {
+      const artifact = await this.ensureArtifact(adapter, document);
+      return {
+        content: artifact.original,
+        fileName: artifact.originalFileName,
+        contentType: artifact.originalContentType,
+      };
+    }
     if (!adapter.downloadOriginal) {
       throw new AppError('TVAN_FILE_UNSUPPORTED', `${capability.displayName} chưa hỗ trợ tải file gốc.`, 422);
     }
     return adapter.downloadOriginal(document, this.context(adapter, document));
   }
 
-  private artifact(id: string): any {
+  private artifact(id: string): CachedArtifact {
     this.ensureActive();
     const artifact = this.artifacts.get(id);
     if (!artifact) throw new AppError('TVAN_ARTIFACT_NOT_FOUND', 'Không tìm thấy file hóa đơn đã chuẩn bị.', 404);
     if (artifact.expiresAt <= Date.now()) {
       this.artifacts.delete(id);
+      this.artifactCache.delete(artifact.cacheKey);
       throw new AppError('TVAN_ARTIFACT_EXPIRED', 'File hóa đơn đã hết thời gian lưu tạm.', 410);
     }
     return artifact;
@@ -344,6 +477,14 @@ export class TvanPdfService {
     const capability = this.registry.capability(document);
     if (!adapter || !capability.supported) {
       throw new AppError('TVAN_PDF_UNSUPPORTED', capability.reason || 'TVAN chưa hỗ trợ xem PDF.', 422);
+    }
+    if (adapter.prepareArtifact) {
+      const artifact = await this.ensureArtifact(adapter, document);
+      return {
+        content: artifact.pdf,
+        contentType: 'application/pdf',
+        fileName: artifact.pdfFileName,
+      };
     }
     return adapter.downloadPdf(document, this.context(adapter, document));
   }
@@ -460,7 +601,13 @@ export class TvanPdfService {
       task.status = 'downloading';
       batch.state.updatedAt = new Date().toISOString();
       try {
-        const pdf = await adapter.downloadPdf(document, context);
+        const pdf = adapter.prepareArtifact
+          ? await this.ensureArtifact(adapter, document).then((artifact) => ({
+            content: artifact.pdf,
+            contentType: 'application/pdf' as const,
+            fileName: artifact.pdfFileName,
+          }))
+          : await adapter.downloadPdf(document, context);
         this.ensureActive();
         const usedBytes = batch.ordered.reduce((sum, item) => sum + (item.task.size || 0), 0);
         if (usedBytes + pdf.content.length > this.maxBatchBytes) {
@@ -559,6 +706,8 @@ export class TvanPdfService {
     this.challenges.clear();
     this.batches.clear();
     this.artifacts.clear();
+    this.artifactCache.clear();
+    this.inflightArtifacts.clear();
     await fsp.rm(this.batchRoot, { recursive: true, force: true }).catch(() => undefined);
   }
 

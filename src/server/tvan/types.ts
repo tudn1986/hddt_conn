@@ -1,6 +1,7 @@
 import type {
   InvoiceDocument,
   TvanCaptchaChallenge,
+  TvanArtifactStatus,
   TvanCaptchaMode,
   TvanCaptchaProbe,
   TvanDownloadPriority,
@@ -22,6 +23,14 @@ export interface TvanOriginalFileResult {
   content: Buffer;
   fileName: string;
   contentType: 'application/pdf' | 'application/zip' | 'application/octet-stream';
+}
+
+export interface TvanPreparedArtifact {
+  original: Buffer;
+  originalFileName: string;
+  originalContentType: 'application/pdf' | 'application/zip';
+  pdf: Buffer;
+  pdfFileName: string;
 }
 
 export interface TvanTokenState {
@@ -54,6 +63,8 @@ export interface TvanCaptchaProbeResult {
 export interface TvanCaptchaVerifyTrace {
   request?: TvanRequestTrace;
   tokenExpiresAt?: string;
+  stage?: TvanArtifactStatus['stage'];
+  contextExpiresAt?: string;
 }
 
 export interface TvanAdapter {
@@ -80,6 +91,14 @@ export interface TvanAdapter {
     document: InvoiceDocument,
     context: TvanAdapterContext,
   ): Promise<TvanPresentationLinkResult>;
+  prepareArtifact?(
+    document: InvoiceDocument,
+    context: TvanAdapterContext,
+  ): Promise<TvanPreparedArtifact>;
+  artifactStatus?(
+    document: InvoiceDocument,
+    context: TvanAdapterContext,
+  ): TvanArtifactStatus;
   downloadOriginal?(
     document: InvoiceDocument,
     context: TvanAdapterContext,

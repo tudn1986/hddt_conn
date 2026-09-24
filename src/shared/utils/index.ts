@@ -3,13 +3,16 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+export type AppErrorPublicDetails = Record<string, string | number | boolean | undefined>;
+
 export class AppError extends Error {
   constructor(
     public readonly code: string,
     message: string,
     public readonly statusCode = 400,
     public readonly retryable = false,
-    public readonly retryAfterMs?: number
+    public readonly retryAfterMs?: number,
+    public readonly publicDetails?: AppErrorPublicDetails,
   ) {
     super(message);
     this.name = 'AppError';

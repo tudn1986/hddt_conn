@@ -62,6 +62,36 @@ export function registerTvanRoutes(app: FastifyInstance): void {
     return request.sessionContext.tvanPdf.prepareArtifact(body.document);
   });
 
+  app.post('/api/tvan/pdf/prepare-artifact', async (request) => {
+    const body = parse(documentBodySchema, request.body);
+    return request.sessionContext.tvanPdf.prepareArtifact(body.document);
+  });
+
+  app.post('/api/tvan/pdf/status', async (request) => {
+    const body = parse(documentBodySchema, request.body);
+    return request.sessionContext.tvanPdf.artifactStatus(body.document);
+  });
+
+  app.post('/api/tvan/pdf/download', async (request, reply) => {
+    const body = parse(documentBodySchema, request.body);
+    const pdf = await request.sessionContext.tvanPdf.viewPdf(body.document);
+    reply
+      .header('Content-Type', 'application/pdf')
+      .header('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(pdf.fileName)}`)
+      .header('Content-Length', String(pdf.content.length));
+    return reply.send(pdf.content);
+  });
+
+  app.post('/api/tvan/artifact/download-original', async (request, reply) => {
+    const body = parse(documentBodySchema, request.body);
+    const file = await request.sessionContext.tvanPdf.downloadOriginal(body.document);
+    reply
+      .header('Content-Type', file.contentType)
+      .header('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`)
+      .header('Content-Length', String(file.content.length));
+    return reply.send(file.content);
+  });
+
   app.post('/api/tvan/file/download', async (request, reply) => {
     const body = parse(documentBodySchema, request.body);
     const file = await request.sessionContext.tvanPdf.downloadOriginal(body.document);

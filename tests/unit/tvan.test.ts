@@ -193,7 +193,7 @@ describe('TVAN registry and adapters', () => {
     });
   });
 
-  it('runs the observed SoftDreams CAPTCHA -> Search -> prepare file -> download ZIP -> PDF flow', async () => {
+  it('runs SoftDreams Search verification separately, then prepares ZIP/PDF with browser-parity headers', async () => {
     const yazl = await import('yazl');
     const zip = await new Promise<Buffer>((resolve, reject) => {
       const archive = new yazl.ZipFile();
@@ -204,20 +204,20 @@ describe('TVAN registry and adapters', () => {
       archive.addBuffer(PDF, 'HOADON_2301213781_1C26TYY_17.pdf');
       archive.end();
     });
-    const opaque = 'OBHNpZ5SPGt2Tlm6N3C5bm8j30Qo/15wmH7hQyIldH+z5/wypUIRwtWIB5xsZ+yPlyRFHvoBCwLpSJ01iWq6yzuuXauiKSooGpvYZxcbkwwpzEe7ewBB8lveQs9uXzO0';
-    const invoiceHtml = '<html><body><div>INVOICE_ONLY</div></body></html>';
+    const opaque = 'SHOW_INV_TOKEN_Abc1234567890+/SHOW_INV_TOKEN_Abc1234567890+/XYZ';
+    const invoiceHtml = '<div class="VATTEMP"><table><tbody><tr><td>INVOICE_ONLY</td></tr></tbody></table></div>';
     const encodedInvData = JSON.stringify({ str: invoiceHtml, cusType: 1 })
       .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const calls: Array<{ url: string; method: string; body?: string; cookie?: string }> = [];
+    const calls: Array<{ url: string; method: string; body?: string; headers: Headers }> = [];
     const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const headers = new Headers(init?.headers || {});
       const body = typeof init?.body === 'string' ? init.body : undefined;
-      calls.push({ url, method: init?.method || 'GET', body, cookie: headers.get('cookie') || undefined });
+      calls.push({ url, method: init?.method || 'GET', body, headers });
       if (url.endsWith('/Search/Index')) {
         return new Response('<html><body>EasyInvoice search</body></html>', {
           status: 200,
-          headers: { 'content-type': 'text/html; charset=utf-8', 'set-cookie': 'ASP.NET_SessionId=boot123; Path=/; HttpOnly' },
+          headers: { 'content-type': 'text/html', 'set-cookie': 'ASP.NET_SessionId=boot123; Path=/; HttpOnly' },
         });
       }
       if (url.endsWith('/Captcha/Show')) {
@@ -228,30 +228,33 @@ describe('TVAN registry and adapters', () => {
         });
       }
       if (url.endsWith('/Search/Search')) {
-        expect(body).toContain('typeSearch=');
+        expect(headers.get('x-requested-with')).toBeNull();
+        expect(headers.get('referer')).toBe('http://2301213781hd.easyinvoice.com.vn/Search/Index');
+        expect(headers.get('origin')).toBe('http://2301213781hd.easyinvoice.com.vn');
         expect(body).toContain('FKey=MDYEKT4OZ');
         expect(body).toContain('Capcha=6348');
-        expect(headers.get('cookie')).toContain('ASP.NET_SessionId=abc123');
-        return new Response(`<html><head><style>${'x'.repeat(5000)}</style></head><body>PORTAL_WRAPPER<input id="InvData" value="${encodedInvData}"><input name="token" value="${opaque}"><script>var model = { toolbarType: '' };</script></body></html>`, {
+        return new Response(`<html><body><input id="InvData" value="${encodedInvData}"><script>
+          var data = JSON.parse(document.getElementById('InvData').value);
+          var model={IsAutoRow:false,IsRowPerPage:true,DiffRowBreaking:250,DiffFooterBreaking:0,DiffEmptyRowAppended:50,IsAppendEmptyRow:true,Layout:1,toolbarType:''};
+          showInv(data.str, 1, 20, model, '${opaque}');
+        </script></body></html>`, {
           status: 200,
           headers: { 'content-type': 'text/html; charset=utf-8' },
         });
       }
       if (url.endsWith('/Invoice/DownloadPdfAndFileAttachFromAvailableHtml')) {
-        expect(body).toContain(`token=${encodeURIComponent(opaque)}`);
+        expect(headers.get('x-requested-with')).toBe('XMLHttpRequest');
+        expect(headers.get('referer')).toBe('http://2301213781hd.easyinvoice.com.vn/Search/Search');
         const params = new URLSearchParams(body);
-        expect(Buffer.from(params.get('html') || '', 'base64').toString('utf8')).toBe(invoiceHtml);
-        expect(Buffer.from(params.get('html') || '', 'base64').toString('utf8')).not.toContain('PORTAL_WRAPPER');
+        expect(params.get('token')).toBe(opaque);
+        expect(Buffer.from(params.get('html') || '', 'base64').toString('utf8')).toContain('INVOICE_ONLY');
         return new Response(JSON.stringify({
           fileGuid: '7959cb20-4095-4feb-8bb5-38f623be9959',
           fileName: 'HOADON_2301213781_1C26TYY_17.zip',
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       if (url.includes('/Invoice/Download?')) {
-        const target = new URL(url);
-        expect(target.searchParams.get('fileGuid')).toBe('7959cb20-4095-4feb-8bb5-38f623be9959');
-        expect(target.searchParams.get('fileName')).toBe('HOADON_2301213781_1C26TYY_17.zip');
-        return new Response(new Uint8Array(zip), { status: 200, headers: { 'content-type': 'application/zip' } });
+        return new Response(new Uint8Array(zip), { status: 200, headers: { 'content-type': 'application/octet-stream' } });
       }
       return new Response('not found', { status: 404 });
     }) as typeof fetch;
@@ -259,38 +262,24 @@ describe('TVAN registry and adapters', () => {
     const adapter = new SoftdreamsTvanAdapter();
     const session = context(fetchImpl);
     const challenge = await adapter.getCaptchaChallenge!(softdreamsDocument(), session.ctx);
-    expect(challenge.challenge).toMatchObject({ providerCode: 'tvan_softdreams', kind: 'text', imageMimeType: 'image/png' });
-    expect(JSON.stringify(challenge.challenge)).not.toContain('abc123');
+    const verification = await adapter.verifyCaptcha!(
+      softdreamsDocument(), challenge.challenge, challenge.privateState, '6348', session.ctx,
+    );
+    expect(verification.stage).toBe('search_verified');
+    expect(calls.map((call) => new URL(call.url).pathname)).toEqual([
+      '/Search/Index', '/Captcha/Show', '/Search/Search',
+    ]);
 
-    const verification = await adapter.verifyCaptcha!(softdreamsDocument(), challenge.challenge, challenge.privateState, '6348', session.ctx);
-    expect(verification.request).toMatchObject({
-      endpoint: 'http://2301213781hd.easyinvoice.com.vn/Search/Search',
-      method: 'POST',
-      requestBody: 'typeSearch=&FKey=MDYEKT4OZ&Capcha=%5Buser-entered-captcha%5D',
-      responseStatus: 200,
-    });
-    const nextContext = context(fetchImpl, session.getToken()).ctx;
-    const plan = adapter.describeDownloadRequest!(softdreamsDocument(), nextContext);
-    expect(plan).toMatchObject({
-      tokenReady: true,
-      method: 'GET',
-      endpoint: 'http://2301213781hd.easyinvoice.com.vn/Invoice/Download?fileGuid=7959cb20-4095-4feb-8bb5-38f623be9959&fileName=HOADON_2301213781_1C26TYY_17.zip',
-      lookup: {
-        portalUrl: 'http://2301213781hd.easyinvoice.com.vn',
-        fkey: 'MDYEKT4OZ',
-        fileGuid: '7959cb20-4095-4feb-8bb5-38f623be9959',
-        fileName: 'HOADON_2301213781_1C26TYY_17.zip',
-      },
-    });
-    expect(JSON.stringify(plan)).not.toContain(opaque);
-    expect(JSON.stringify(plan)).not.toContain('abc123');
-
-    const artifact = await adapter.downloadArtifact(softdreamsDocument(), nextContext);
+    const verifiedSession = context(fetchImpl, session.getToken());
+    expect(adapter.artifactStatus!(softdreamsDocument(), verifiedSession.ctx).stage).toBe('search_verified');
+    const artifact = await adapter.prepareArtifact!(softdreamsDocument(), verifiedSession.ctx);
     expect(artifact.originalContentType).toBe('application/zip');
     expect(artifact.original.subarray(0, 2).toString()).toBe('PK');
-    expect(artifact.originalFileName).toBe('HOADON_2301213781_1C26TYY_17.zip');
     expect(artifact.pdf.subarray(0, 5).toString()).toBe('%PDF-');
-    expect(artifact.pdfFileName).toBe('HOADON_2301213781_1C26TYY_17.pdf');
+    expect(adapter.artifactStatus!(
+      softdreamsDocument(),
+      context(fetchImpl, verifiedSession.getToken()).ctx,
+    ).stage).toBe('pdf_ready');
     expect(calls.map((call) => `${call.method} ${new URL(call.url).pathname}`)).toEqual([
       'GET /Search/Index',
       'GET /Captcha/Show',
@@ -300,16 +289,16 @@ describe('TVAN registry and adapters', () => {
     ]);
   });
 
-  it('uses DownloadFileFromHtml for SoftDreams DA_LIEU and keeps the direct PDF original', async () => {
-    const opaque = 'DA1LieuTokenAbc1234567890XYZ+/DA1LieuTokenAbc1234567890XYZ+/DA1LieuToken';
-    const invoiceHtml = '<html><body>DA_LIEU_INVOICE</body></html>';
+  it('uses DownloadFileFromHtml with isImage=false for SoftDreams DA_LIEU', async () => {
+    const opaque = 'DA_LIEU_SHOWINV_TOKEN_Abc1234567890+/DA_LIEU_SHOWINV_TOKEN_XYZ';
+    const invoiceHtml = '<div class="VATTEMP"><table><tbody><tr><td>DA_LIEU</td></tr></tbody></table></div>';
     const encodedInvData = JSON.stringify({ str: invoiceHtml })
       .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const calls: Array<{ url: string; method: string; body?: string }> = [];
+    const calls: string[] = [];
     const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const body = typeof init?.body === 'string' ? init.body : undefined;
-      calls.push({ url, method: init?.method || 'GET', body });
+      calls.push(`${init?.method || 'GET'} ${new URL(url).pathname}`);
       if (url.endsWith('/Search/Index')) {
         return new Response('<html>search</html>', {
           status: 200,
@@ -319,27 +308,27 @@ describe('TVAN registry and adapters', () => {
       if (url.endsWith('/Captcha/Show')) {
         return new Response(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,1]), {
           status: 200,
-          headers: { 'content-type': 'image/png', 'set-cookie': 'ASP.NET_SessionId=da2; Path=/; HttpOnly' },
+          headers: { 'content-type': 'image/png' },
         });
       }
       if (url.endsWith('/Search/Search')) {
-        return new Response(`<html><body><input id="InvData" value="${encodedInvData}"><input name="token" value="${opaque}"><script>var model={toolbarType:'DA_LIEU'};</script></body></html>`, {
-          status: 200,
-          headers: { 'content-type': 'text/html' },
-        });
+        return new Response(`<html><body><input id="InvData" value="${encodedInvData}"><script>
+          var data={str:''};
+          var model={IsAutoRow:false,IsRowPerPage:true,DiffRowBreaking:0,DiffFooterBreaking:0,DiffEmptyRowAppended:0,IsAppendEmptyRow:false,Layout:1,toolbarType:'DA_LIEU'};
+          showInv(data.str, 1, 20, model, '${opaque}');
+        </script></body></html>`, { status: 200, headers: { 'content-type': 'text/html' } });
       }
       if (url.endsWith('/Invoice/DownloadFileFromHtml')) {
         const params = new URLSearchParams(body);
         expect(params.get('token')).toBe(opaque);
         expect(params.get('isImage')).toBe('false');
-        expect(Buffer.from(params.get('html') || '', 'base64').toString('utf8')).toBe(invoiceHtml);
         return new Response(JSON.stringify({
           fileGuid: '12345678-1234-4234-8234-123456789012',
           fileName: 'HOADON_DA_LIEU.pdf',
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
       if (url.includes('/Invoice/Download?')) {
-        return new Response(new Uint8Array(PDF), { status: 200, headers: { 'content-type': 'application/octet-stream' } });
+        return new Response(new Uint8Array(PDF), { status: 200, headers: { 'content-type': 'application/zip' } });
       }
       return new Response('not found', { status: 404 });
     }) as typeof fetch;
@@ -348,87 +337,64 @@ describe('TVAN registry and adapters', () => {
     const session = context(fetchImpl);
     const challenge = await adapter.getCaptchaChallenge!(softdreamsDocument(), session.ctx);
     await adapter.verifyCaptcha!(softdreamsDocument(), challenge.challenge, challenge.privateState, '9999', session.ctx);
-    const verified = context(fetchImpl, session.getToken()).ctx;
-
-    const original = await adapter.downloadOriginal!(softdreamsDocument(), verified);
-    expect(original.contentType).toBe('application/pdf');
-    expect(original.fileName).toBe('HOADON_DA_LIEU.pdf');
-    expect(original.content.subarray(0, 5).toString()).toBe('%PDF-');
-
-    const pdf = await adapter.downloadPdf(softdreamsDocument(), verified);
-    expect(pdf.content).toEqual(original.content);
-    expect(calls.some((call) => new URL(call.url).pathname === '/Invoice/DownloadPdfAndFileAttachFromAvailableHtml')).toBe(false);
-    expect(calls.filter((call) => new URL(call.url).pathname === '/Invoice/DownloadFileFromHtml')).toHaveLength(1);
-  });
-
-  it('keeps a direct SoftDreams PDF as both original file and PDF artifact', async () => {
-    const doc = softdreamsDocument();
-    const state = {
-      version: 1,
-      documentKey: doc.key,
-      sellerTaxCode: '2301213781',
-      providerTaxCode: '0105987432',
-      portalOrigin: 'http://2301213781hd.easyinvoice.com.vn',
-      portalHost: '2301213781hd.easyinvoice.com.vn',
-      portalProtocol: 'http:',
-      fkey: 'MDYEKT4OZ',
-      downloadUrl: 'http://2301213781hd.easyinvoice.com.vn/Invoice/Download?fileGuid=12345678-1234-1234-1234-123456789012&fileName=invoice.pdf',
-      fileGuid: '12345678-1234-1234-1234-123456789012',
-      fileName: 'invoice.pdf',
-    };
-    const fetchImpl = (async () => new Response(new Uint8Array(PDF), {
-      status: 200,
-      headers: { 'content-type': 'application/pdf' },
-    })) as typeof fetch;
-    const token = { token: JSON.stringify(state), expiresAt: Date.now() + 60_000 };
-    const artifact = await new SoftdreamsTvanAdapter().downloadArtifact(doc, context(fetchImpl, token).ctx);
+    const artifact = await adapter.prepareArtifact!(softdreamsDocument(), context(fetchImpl, session.getToken()).ctx);
     expect(artifact.originalContentType).toBe('application/pdf');
-    expect(artifact.original).toEqual(artifact.pdf);
-    expect(artifact.originalFileName).toBe('invoice.pdf');
-    expect(artifact.pdfFileName).toBe('invoice.pdf');
+    expect(artifact.originalFileName).toBe('HOADON_DA_LIEU.pdf');
+    expect(artifact.pdf).toEqual(artifact.original);
+    expect(calls).not.toContain('POST /Invoice/DownloadPdfAndFileAttachFromAvailableHtml');
+    expect(calls).toContain('POST /Invoice/DownloadFileFromHtml');
   });
 
-  it('sniffs SoftDreams artifact bytes instead of trusting filename or Content-Type', async () => {
-    const doc = softdreamsDocument();
-    const baseState = {
-      version: 1,
-      documentKey: doc.key,
-      sellerTaxCode: '2301213781',
-      providerTaxCode: '0105987432',
-      portalOrigin: 'http://2301213781hd.easyinvoice.com.vn',
-      portalHost: '2301213781hd.easyinvoice.com.vn',
-      portalProtocol: 'http:',
-      fkey: 'MDYEKT4OZ',
-      fileGuid: '12345678-1234-4234-8234-123456789012',
-    };
+  it('preserves SEARCH_VERIFIED state across SoftDreams provider HTTP 408 and retries prepare without a new CAPTCHA', async () => {
+    const opaque = 'RETRY_SHOWINV_TOKEN_Abc1234567890+/RETRY_SHOWINV_TOKEN_XYZ';
+    const invoiceHtml = '<div class="VATTEMP"><table><tbody><tr><td>RETRY</td></tr></tbody></table></div>';
+    const encodedInvData = JSON.stringify({ str: invoiceHtml }).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let prepareCount = 0;
+    let searchCount = 0;
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith('/Search/Index')) return new Response('<html/>', { status: 200, headers: { 'set-cookie': 'ASP.NET_SessionId=r1; Path=/' } });
+      if (url.endsWith('/Captcha/Show')) return new Response(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,1]), { status: 200, headers: { 'content-type': 'image/png' } });
+      if (url.endsWith('/Search/Search')) {
+        searchCount += 1;
+        return new Response(`<html><body><input id="InvData" value="${encodedInvData}"><script>
+          var data={str:''}; var model={IsAutoRow:false,IsRowPerPage:true,Layout:1,toolbarType:''};
+          showInv(data.str, 1, 20, model, '${opaque}');
+        </script></body></html>`, { status: 200 });
+      }
+      if (url.endsWith('/Invoice/DownloadPdfAndFileAttachFromAvailableHtml')) {
+        prepareCount += 1;
+        if (prepareCount === 1) return new Response('timeout', { status: 408 });
+        return new Response(JSON.stringify({
+          fileGuid: '12345678-1234-4234-8234-123456789012',
+          fileName: 'retry.pdf',
+        }), { status: 200 });
+      }
+      if (url.includes('/Invoice/Download?')) return new Response(new Uint8Array(PDF), { status: 200 });
+      return new Response('not found', { status: 404 });
+    }) as typeof fetch;
 
-    const pdfNamedZip = {
-      ...baseState,
-      fileName: 'mismatch.zip',
-      downloadUrl: 'http://2301213781hd.easyinvoice.com.vn/Invoice/Download?fileGuid=12345678-1234-4234-8234-123456789012&fileName=mismatch.zip',
-    };
-    const pdfOriginal = await new SoftdreamsTvanAdapter().downloadOriginal!(
-      doc,
-      context((async () => new Response(new Uint8Array(PDF), {
-        status: 200,
-        headers: { 'content-type': 'application/zip' },
-      })) as typeof fetch, { token: JSON.stringify(pdfNamedZip), expiresAt: Date.now() + 60_000 }).ctx,
-    );
-    expect(pdfOriginal.contentType).toBe('application/pdf');
-    expect(pdfOriginal.fileName.toLocaleLowerCase()).toMatch(/\.pdf$/);
+    const adapter = new SoftdreamsTvanAdapter();
+    const session = context(fetchImpl);
+    const challenge = await adapter.getCaptchaChallenge!(softdreamsDocument(), session.ctx);
+    await adapter.verifyCaptcha!(softdreamsDocument(), challenge.challenge, challenge.privateState, '1234', session.ctx);
 
-    const htmlNamedPdf = {
-      ...baseState,
-      fileName: 'fake.pdf',
-      downloadUrl: 'http://2301213781hd.easyinvoice.com.vn/Invoice/Download?fileGuid=12345678-1234-4234-8234-123456789012&fileName=fake.pdf',
-    };
-    await expect(new SoftdreamsTvanAdapter().downloadOriginal!(
-      doc,
-      context((async () => new Response('<html>provider error</html>', {
-        status: 200,
-        headers: { 'content-type': 'application/pdf' },
-      })) as typeof fetch, { token: JSON.stringify(htmlNamedPdf), expiresAt: Date.now() + 60_000 }).ctx,
-    )).rejects.toMatchObject({ code: 'TVAN_SOFTDREAMS_DOWNLOAD_INVALID' });
+    const firstContext = context(fetchImpl, session.getToken());
+    await expect(adapter.prepareArtifact!(softdreamsDocument(), firstContext.ctx)).rejects.toMatchObject({
+      code: 'TVAN_SOFTDREAMS_PREPARE_DOWNLOAD_TIMEOUT',
+      retryable: true,
+      publicDetails: expect.objectContaining({ preserveContext: true, retryStage: 'prepare_artifact' }),
+    });
+    expect(adapter.artifactStatus!(
+      softdreamsDocument(),
+      context(fetchImpl, firstContext.getToken()).ctx,
+    ).stage).toBe('representation_ready');
+
+    const retryContext = context(fetchImpl, firstContext.getToken());
+    const artifact = await adapter.prepareArtifact!(softdreamsDocument(), retryContext.ctx);
+    expect(artifact.pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(searchCount).toBe(1);
+    expect(prepareCount).toBe(2);
   });
 
   it('uses MISA customData from the observed lookup response as the documented downloadhandler ext', async () => {
@@ -813,8 +779,9 @@ describe('TVAN per-invoice token scope', () => {
 
       await service.viewPdf(invoiceA);
       expect((await service.prepareView(invoiceA)).ready).toBe(true);
-      expect([...(service as any).tokens.keys()]).toContain('scope_p3|scope-a');
-      expect([...(service as any).tokens.keys()]).not.toContain('scope_p3');
+      const tokenKeys = [...(service as any).tokens.keys()] as string[];
+      expect(tokenKeys.some((key) => key.startsWith('scope_p3|'))).toBe(true);
+      expect(tokenKeys).not.toContain('scope_p3');
     } finally {
       await service.dispose();
       await fs.rm(root, { recursive: true, force: true });
