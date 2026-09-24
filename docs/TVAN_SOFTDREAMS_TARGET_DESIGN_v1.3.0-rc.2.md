@@ -97,7 +97,14 @@ Runtime Docker cài Chromium và đặt:
 
 ```text
 HDDT_CHROMIUM_EXECUTABLE=/usr/bin/chromium
+HOME=/tmp
+XDG_CONFIG_HOME=/tmp/chromium-config
+XDG_CACHE_HOME=/tmp/chromium-cache
 ```
+
+Các HOME/XDG path nằm trên private `/tmp` tmpfs để Chromium vẫn tạo profile/cache
+khi container chạy `read_only=true`; không nới lỏng read-only root filesystem.
+
 Nếu exact renderer không có Chromium, hệ thống fail với
 `TVAN_SOFTDREAMS_RENDERER_UNAVAILABLE`; không fallback sang approximate PDF.
 

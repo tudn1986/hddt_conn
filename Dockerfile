@@ -25,6 +25,11 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && mkdir -p /data/app /tmp/disabled-business-data \
  && chown -R node:node /data /tmp/disabled-business-data /app
+# Chromium needs writable profile/config paths when the runtime root filesystem is read-only.
+# DEV/production compose provides /tmp as a private tmpfs.
+ENV HOME=/tmp \
+    XDG_CONFIG_HOME=/tmp/chromium-config \
+    XDG_CACHE_HOME=/tmp/chromium-cache
 COPY --from=builder --chown=node:node /app/package.json ./package.json
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist ./dist
