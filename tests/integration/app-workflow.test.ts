@@ -77,6 +77,15 @@ describe('local Fastify API security', () => {
     expect(missing.statusCode).toBe(403);
     expect(missing.json().error).toBe('CSRF_INVALID');
 
+    const rejectedBeforeJsonParsing = await app.inject({
+      method: 'POST',
+      url: '/api/datasets/import',
+      headers: { cookie, 'content-type': 'application/json' },
+      payload: '{',
+    });
+    expect(rejectedBeforeJsonParsing.statusCode).toBe(403);
+    expect(rejectedBeforeJsonParsing.json().error).toBe('CSRF_INVALID');
+
     const evil = await app.inject({ method: 'GET', url: '/api/app/status', headers: { origin: 'https://evil.example' } });
     expect(evil.statusCode).toBe(403);
     expect(evil.json().error).toBe('ORIGIN_REJECTED');
@@ -86,7 +95,7 @@ describe('local Fastify API security', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
-      headers: { 'x-hddt-csrf': csrf, 'content-type': 'application/json' },
+      headers: { 'x-hddt-csrf': csrf, cookie, 'content-type': 'application/json' },
       payload: '{',
     });
     expect(response.statusCode).toBe(400);

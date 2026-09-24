@@ -187,24 +187,24 @@ export async function buildApp(options: BuildAppOptions = {}) {
         "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-src 'self' blob:; frame-ancestors 'none'"
       );
     }
-  });
-
-  app.addHook('preHandler', async (request) => {
-    if (!request.url.startsWith('/api/')) return;
-    const origin = request.headers.origin;
-    if (origin && !requestOriginAllowed(origin)) {
-      throw new AppError(
-        'ORIGIN_REJECTED',
-        'Từ chối Origin chưa được cho phép. Cấu hình HDDT_ALLOWED_ORIGINS khi chạy Docker/LAN.',
-        403,
-      );
-    }
-    if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
-      const supplied = String(request.headers['x-hddt-csrf'] || '');
-      const expected = request.sessionContext.csrfToken;
-      const valid = supplied.length === expected.length && crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
-      if (!valid) {
-        throw new AppError('CSRF_INVALID', 'Thiếu hoặc sai mã bảo vệ phiên cục bộ.', 403);
+    // Reject forbidden API mutations before Fastify parses potentially large JSON bodies.
+    // This prevents stale CSRF/session requests from allocating the full dataset payload in memory.
+    if (request.url.startsWith('/api/')) {
+      const origin = request.headers.origin;
+      if (origin && !requestOriginAllowed(origin)) {
+        throw new AppError(
+          'ORIGIN_REJECTED',
+          'Từ chối Origin chưa được cho phép. Cấu hình HDDT_ALLOWED_ORIGINS khi chạy Docker/LAN.',
+          403,
+        );
+      }
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+        const supplied = String(request.headers['x-hddt-csrf'] || '');
+        const expected = request.sessionContext.csrfToken;
+        const valid = supplied.length === expected.length && crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
+        if (!valid) {
+          throw new AppError('CSRF_INVALID', 'Thiếu hoặc sai mã bảo vệ phiên cục bộ.', 403);
+        }
       }
     }
   });
