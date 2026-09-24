@@ -75,6 +75,7 @@ import { InvoiceRelationTrigger } from '../components/invoices/InvoiceRelationPo
 import { InvoiceSummaryBar, normalizeCurrencyCode } from '../components/invoices/InvoiceSummaryBar.js';
 import { InvoiceLinesModal } from '../components/invoices/InvoiceLinesModal.js';
 import TvanArtifactCard from '../components/TvanArtifactCard.js';
+import EhoadonDientuPresentationCard, { ehoadonNeedsGdtXml, isEhoadonDientuInvoice } from '../components/EhoadonDientuPresentationCard.js';
 
 const { RangePicker } = DatePicker;
 const { Text, Paragraph } = Typography;
@@ -490,6 +491,10 @@ export default function InvoicePage(props: Props) {
   };
 
   const requestTvanPdfView = async (document: InvoiceDocument) => {
+    if (!authenticated && ehoadonNeedsGdtXml(document)) {
+      message.warning('Hóa đơn MSTTCGP 0314743623 cần đăng nhập GDT để tải XML trước khi xem PDF.');
+      return;
+    }
     setTvanBusyKey(document.key);
     try {
       const prepared = await api.prepareTvanPdfView(document);
@@ -530,6 +535,9 @@ export default function InvoicePage(props: Props) {
   const startTvanPdfBatch = async () => {
     const targets = selectedDocuments;
     if (!targets.length) return message.warning('Chọn ít nhất một hóa đơn.');
+    if (!authenticated && targets.some(ehoadonNeedsGdtXml)) {
+      return message.warning('Có hóa đơn MSTTCGP 0314743623 cần đăng nhập GDT để tải XML trước khi tải PDF.');
+    }
     setTvanBatchBusy(true);
     try {
       await finishTvanBatch(await api.startTvanPdfBatch(targets));
@@ -1131,7 +1139,14 @@ export default function InvoicePage(props: Props) {
       fixed: 'right',
       width: columnWidths.actions,
       className: 'invoice-cell-actions',
-      render: (_: unknown, record: any) => <Button type="link" size="small" onClick={() => setDrawerDoc(record)}>Xem</Button>,
+      render: (_: unknown, record: InvoiceDocument) => (
+        <Space size={2}>
+          <Button type="link" size="small" onClick={() => setDrawerDoc(record)}>Xem</Button>
+          {isEhoadonDientuInvoice(record) && (
+            <Button type="link" size="small" loading={tvanBusyKey === record.key} onClick={() => void requestTvanPdfView(record)}>PDF</Button>
+          )}
+        </Space>
+      ),
     },
   ];
 
@@ -1608,7 +1623,7 @@ export default function InvoicePage(props: Props) {
       </div>
 
       <InvoiceLinesModal invoice={linesModalDoc} onClose={() => setLinesModalDoc(null)} />
-      <InvoiceDrawer document={drawerDoc} onClose={() => setDrawerDoc(null)} />
+      <InvoiceDrawer document={drawerDoc} authenticated={authenticated} onClose={() => setDrawerDoc(null)} />
     </Space>
   );
 }
@@ -2387,7 +2402,7 @@ function ViettelPresentationCard({ document }: { document: InvoiceDocument }) {
   );
 }
 
-function InvoiceDrawer({ document, onClose }: { document: any | null; onClose: () => void }) {
+function InvoiceDrawer({ document, authenticated, onClose }: { document: any | null; authenticated: boolean; onClose: () => void }) {
   if (!document) return null;
   const dynamicFields = [
     ...(document.dynamicFields || []),
@@ -2428,6 +2443,7 @@ function InvoiceDrawer({ document, onClose }: { document: any | null; onClose: (
           <MisaPresentationCard document={document as InvoiceDocument} />
           <InvoiceTvanPresentationCard document={document as InvoiceDocument} />
           <ViettelPresentationCard document={document as InvoiceDocument} />
+          <EhoadonDientuPresentationCard document={document as InvoiceDocument} authenticated={authenticated} />
           <TvanArtifactCard document={document as InvoiceDocument} />
         </> },
         { key: 'seller', label: 'Người bán', children: partyDescription(document.seller) },

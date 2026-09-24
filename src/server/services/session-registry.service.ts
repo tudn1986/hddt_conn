@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import type { GdtConnector, LiveConnectorOptions } from '../gdt/connector.js';
-import { createConnector } from '../gdt/connector.js';
+import { createConnector, SessionExpiredError } from '../gdt/connector.js';
 import type { ConnectorMode } from '../../shared/models/index.js';
 import { SessionService } from './session.service.js';
 import { TvanPdfService } from '../tvan/pdf.service.js';
@@ -99,6 +99,7 @@ export class SessionRegistry {
       tvanPdf: new TvanPdfService(this.options.settings, {
         namespace: randomSecret(12),
         loadInvoiceXml: async (document) => {
+          if (!session.isAuthenticated()) throw new SessionExpiredError();
           const sellerTaxCode = document.seller?.taxCode;
           const { templateNo, series, invoiceNo } = document;
           if (!sellerTaxCode || templateNo === undefined || !series || invoiceNo === undefined || invoiceNo === '') {

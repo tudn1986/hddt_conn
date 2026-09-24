@@ -41,6 +41,7 @@ describe('ehoadondientu GDT XML bridge', () => {
     });
 
     const connector = new MockGdtConnector();
+    vi.spyOn(connector, 'isAuthenticated').mockReturnValue(true);
     const downloadXml = vi.spyOn(connector, 'downloadXml').mockResolvedValue({
       content: xml, filename: 'invoice.xml', contentType: 'application/xml', size: xml.length,
     });
