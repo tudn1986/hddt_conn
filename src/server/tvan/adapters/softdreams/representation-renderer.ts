@@ -219,25 +219,45 @@ async function renderWithChromium(search: SoftdreamsSearchResult): Promise<Rende
       const rows = tbody ? Array.from(tbody.children).filter((node): node is HTMLTableRowElement => node.tagName === 'TR') : [];
       if (rows.length < 2) return { html: container.innerHTML, pageCount: 1 };
 
-      const header = tbody?.closest('table')?.querySelector<HTMLElement>('thead');
-      const headerHeight = header?.getBoundingClientRect().height || 0;
+      const rootRect = root.getBoundingClientRect();
+      const firstRowRect = rows[0].getBoundingClientRect();
       const footer = root.querySelector<HTMLElement>('tfoot,.footer,.invoice-footer');
       const footerHeight = footer?.getBoundingClientRect().height || 0;
-      const pageHeight = Math.max(
-        520,
-        1123
-          - Math.max(0, input.diffRowBreaking || 0)
-          - Math.max(0, input.diffFooterBreaking || 0)
-          - Math.min(120, footerHeight)
-          - Math.min(100, headerHeight),
-      );
+
+      // Measure the physical page in Chromium instead of hard-coding pixel height.
+      // 297mm is the portal's portrait print-page contract for the 808px VATTEMP.
+      const pageMetric = document.createElement('div');
+      pageMetric.setAttribute('aria-hidden', 'true');
+      pageMetric.style.cssText = [
+        'position:absolute',
+        'visibility:hidden',
+        'pointer-events:none',
+        'width:808px',
+        'height:297mm',
+        'box-sizing:border-box',
+      ].join(';');
+      document.body.appendChild(pageMetric);
+      const physicalPageHeight = pageMetric.getBoundingClientRect().height;
+      pageMetric.remove();
+
+      const topContentOffset = Math.max(0, firstRowRect.top - rootRect.top);
+      const providerReservedHeight = Math.max(0, input.diffRowBreaking || 0)
+        + Math.max(0, input.diffFooterBreaking || 0)
+        + (input.isAppendEmptyRow ? Math.max(0, input.diffEmptyRowAppended || 0) : 0)
+        + Math.max(0, footerHeight);
+      const rowBudget = physicalPageHeight - topContentOffset - providerReservedHeight;
+      if (!Number.isFinite(rowBudget) || rowBudget <= 0) {
+        throw new Error('invalid layout budget');
+      }
 
       const groups: number[][] = [];
       let group: number[] = [];
       let used = 0;
       rows.forEach((row, index) => {
+        // Browser layout is the source of truth: wrapped text, fonts and merged cells
+        // all contribute their measured height. No line-count approximation is used.
         const height = Math.max(1, row.getBoundingClientRect().height);
-        if (group.length > 0 && used + height > pageHeight) {
+        if (group.length > 0 && used + height > rowBudget) {
           groups.push(group);
           group = [];
           used = 0;
@@ -269,9 +289,8 @@ async function renderWithChromium(search: SoftdreamsSearchResult): Promise<Rende
     }, {
       diffRowBreaking: search.renderModel.DiffRowBreaking,
       diffFooterBreaking: search.renderModel.DiffFooterBreaking,
-      layout: search.renderModel.Layout,
-      status: search.status,
-      pattern: search.pattern || '',
+      diffEmptyRowAppended: search.renderModel.DiffEmptyRowAppended,
+      isAppendEmptyRow: search.renderModel.IsAppendEmptyRow,
     });
 
     if (!result.html.includes('VATTEMP')) {

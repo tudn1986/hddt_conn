@@ -90,7 +90,10 @@ chọn khi layout phụ thuộc DOM metrics, đặc biệt
 
 Exact path dùng một Chromium process được reuse, context/page riêng theo render,
 network bị block, script/provider event handler bị loại, container 808px và
-metrics thật từ DOM. Concurrency mặc định là 2, cấu hình bằng
+metrics thật từ DOM. Chiều cao trang được Chromium đo từ CSS physical page
+`297mm` thay vì hard-code pixel; budget phân trang dùng vị trí row thực,
+row height thực và các Diff* trong render model, không dùng line-count
+approximation. Concurrency mặc định là 2, cấu hình bằng
 `HDDT_TVAN_RENDER_CONCURRENCY` (1..8).
 
 Runtime Docker cài Chromium và đặt:
