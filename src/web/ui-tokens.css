@@ -1,0 +1,107 @@
+:root {
+  /* Brand / semantic colors */
+  --hddt-color-primary: #1890ff;
+  --hddt-color-primary-dark: #0b5cad;
+  --hddt-color-primary-light: #e6f7ff;
+  --hddt-color-text-primary: #0f172a;
+  --hddt-color-text-secondary: #475569;
+  --hddt-color-text-tertiary: #94a3b8;
+  --hddt-color-border: #cbd5e1;
+  --hddt-color-border-light: #e2e8f0;
+  --hddt-color-bg-app: #fafafa;
+  --hddt-color-bg-surface: #ffffff;
+  --hddt-color-bg-subtle: #f8fafc;
+  --hddt-color-bg-hover: #f0f5ff;
+  --hddt-color-data-actions-bg: #f0f7ff;
+  --hddt-color-data-actions-border: #d6e4ff;
+  --hddt-color-success: #10b981;
+  --hddt-color-warning: #f59e0b;
+  --hddt-color-danger: #ef4444;
+  --hddt-color-info: #3b82f6;
+
+  /* Spacing */
+  --hddt-space-1: 4px;
+  --hddt-space-2: 8px;
+  --hddt-space-3: 12px;
+  --hddt-space-4: 16px;
+  --hddt-space-5: 20px;
+  --hddt-space-6: 24px;
+
+  /* Typography */
+  --hddt-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --hddt-font-size-caption: 11px;
+  --hddt-font-size-small: 12px;
+  --hddt-font-size-body: 13px;
+  --hddt-font-size-control: 14px;
+  --hddt-font-weight-normal: 400;
+  --hddt-font-weight-medium: 500;
+  --hddt-font-weight-semibold: 600;
+  --hddt-font-weight-bold: 700;
+
+  /* Shape / depth */
+  --hddt-radius-sm: 4px;
+  --hddt-radius-md: 6px;
+  --hddt-radius-lg: 8px;
+  --hddt-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --hddt-shadow-sm: 0 1px 4px rgba(15, 23, 42, 0.08);
+  --hddt-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.10);
+  --hddt-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --hddt-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --hddt-header-height: 64px;
+  --hddt-menu-height: 42px;
+  --hddt-content-padding-x: 12px;
+  --hddt-z-sticky: 900;
+  --hddt-z-menu: 999;
+  --hddt-z-header: 1000;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  font-family: var(--hddt-font-family);
+  color: var(--hddt-color-text-primary);
+}
+
+body {
+  margin: 0;
+  background: var(--hddt-color-bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Keyboard users must always be able to locate focus. */
+:where(.ant-btn, .ant-input, .ant-input-affix-wrapper, .ant-picker, .ant-select-selector, .ant-checkbox-wrapper, .ant-table-row):focus-visible {
+  outline: 2px solid var(--hddt-color-primary) !important;
+  outline-offset: 2px;
+}
+
+/* Shared data-page visual language used by Invoice / Download / Accounting. */
+.hddt-page-stack {
+  width: 100%;
+}
+
+.hddt-section-card {
+  border-color: var(--hddt-color-border-light);
+  box-shadow: var(--hddt-shadow-xs);
+}
+
+.hddt-data-table .ant-table-thead > tr > th {
+  color: var(--hddt-color-text-primary);
+  font-weight: var(--hddt-font-weight-semibold);
+  background: var(--hddt-color-bg-subtle);
+}
+
+.hddt-data-table .ant-table-tbody > tr:nth-child(odd) > td {
+  background: #ffffff;
+}
+
+.hddt-data-table .ant-table-tbody > tr:nth-child(even) > td {
+  background: #fafafa;
+}
+
+.hddt-data-table .ant-table-tbody > tr:hover > td {
+  background: var(--hddt-color-bg-hover) !important;
+}

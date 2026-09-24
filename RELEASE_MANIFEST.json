@@ -1,0 +1,42 @@
+{
+  "format": "hddt-public-release-candidate-manifest",
+  "schemaVersion": 1,
+  "appVersion": "1.3.0-rc.2",
+  "generatedAt": "2026-09-23T14:27:00+07:00",
+  "scope": "public-web-docker-source-release-candidate-custom-admin-ui-tvan-catalog-db-selected-export",
+  "verification": {
+    "sourceBaseline": "hddt_conn_v1.3.0-rc.1 plus selected-only export and item-code reporting patch",
+    "typescriptSyntax": "pass-92-ts-tsx-files-0-syntax-errors",
+    "nodeScriptSyntax": "pass-modified-mjs-node-check",
+    "dependencyInstall": "blocked-online-install-timeout-and-offline-cache-missing-ant-design-icons",
+    "typecheckLint": "not-run-full-dependencies-unavailable",
+    "tests": "export-test-updated-but-full-suite-not-run-full-dependencies-unavailable",
+    "productionBuild": "not-run-full-dependencies-unavailable",
+    "dockerBuild": "not-run-docker-runtime-unavailable",
+    "deploymentAcceptance": "required-on-target-environment"
+  },
+  "requiredDocs": [
+    "README_PUBLIC.md",
+    "docs/PUBLIC_DOCKER_DEPLOYMENT.md",
+    "docs/RELEASE_CANDIDATE_ACCEPTANCE.md",
+    "docs/RELEASE_NOTES_v1.3.0-rc.2.md"
+  ],
+  "legacyWarning": "Files and documents describing older portable/local/VM300 releases are retained as historical source context; follow the current deployment documentation for this release.",
+  "customizations": [
+    "Bumps application version to 1.3.0-rc.2.",
+    "Retains the existing /admin WebUI and TVAN Catalog DB functionality from the rc.1 source baseline.",
+    "Moves invoice row selection to the application level so the selected invoice set is shared across invoice, download and accounting-export pages.",
+    "Bulk Excel, TVAN PDF and XML/ZIP operations consume only the selected invoice set.",
+    "Accounting report/profile exports and on-screen summaries consume only the selected invoice set.",
+    "Adds InvoiceLine.itemCode as the Mã hàng hóa/dịch vụ column in the ChiTiet Excel sheet and preserves it as text.",
+    "Shows Mã hàng hóa/dịch vụ in the HHDV detail modal and accounting HHDV report.",
+    "Adds an export unit-test assertion for itemCode value and Excel text formatting.",
+    "Updates source packaging output naming to hddt_conn_v<version>.zip using VERSION dynamically."
+  ],
+  "knownLimits": [
+    "A selected invoice without hydrated detail lines can still be exported, but its ChiTiet rows are unavailable until detail is loaded.",
+    "TVAN PDF batch remains subject to provider capability, CAPTCHA and the existing batch request limit.",
+    "AMIS profiles remain foundation mappings until an official verified workbook is provided.",
+    "Full dependency-enabled verify/build must be run in the target CI or deployment environment before production acceptance."
+  ]
+}

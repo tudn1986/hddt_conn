@@ -1,0 +1,5 @@
+HDDT_v1.0.0
+Copyright (c) 2026
+
+Phần mềm được cung cấp theo thỏa thuận dự án.
+Người dùng chịu trách nhiệm bảo mật tài khoản Cổng HĐĐT và dữ liệu xuất ra.

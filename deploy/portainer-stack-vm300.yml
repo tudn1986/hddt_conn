@@ -1,0 +1,49 @@
+services:
+  hddt-conn:
+    image: hddt_conn:1.2.1-r12
+    container_name: hddt-conn
+    restart: unless-stopped
+    init: true
+
+    ports:
+      - "8088:3210"
+
+    environment:
+      NODE_ENV: production
+      TZ: Asia/Ho_Chi_Minh
+      HDDT_DOCKER: "1"
+      HDDT_CONNECTOR: live
+      HDDT_BIND_HOST: 0.0.0.0
+      HDDT_PORT: "3210"
+      HDDT_FIXED_PORT: "1"
+      HDDT_NO_OPEN_BROWSER: "1"
+      HDDT_APP_DATA_DIR: /data/app
+      HDDT_DATA_ROOT: /data/files
+      HDDT_ALLOWED_ORIGINS: http://10.10.2.45:8088
+      HDDT_PUBLIC_URL: http://10.10.2.45:8088
+
+    volumes:
+      - /opt/hddt_conn/data/app:/data/app
+      - /opt/hddt_conn/data/files:/data/files
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3210/api/app/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+    stop_grace_period: 30s
+
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"

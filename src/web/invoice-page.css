@@ -1,0 +1,2041 @@
+.invoice-summary-row .ant-col {
+  display: flex;
+}
+
+.invoice-summary-card {
+  width: 100%;
+  height: 100%;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.currency-summary .ant-card-head {
+  min-height: 38px;
+  background: #eff6ff;
+  border-bottom-color: #bfdbfe;
+}
+
+.currency-summary-emphasized .ant-card-head {
+  color: #0b4da2;
+  background: #dbeafe;
+}
+
+.currency-summary-list {
+  display: grid;
+  gap: 6px;
+  max-height: 118px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.currency-summary-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  border-bottom: 1px dashed #dbe3ee;
+}
+
+.currency-summary-line:last-child {
+  border-bottom: 0;
+}
+
+.currency-code {
+  min-width: 42px;
+  color: #475569;
+  font-weight: 700;
+}
+
+.currency-value {
+  color: #0f172a;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.query-warning-list {
+  max-height: 320px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  overflow: auto;
+  color: #7c2d12;
+  font-size: 13px;
+  line-height: 1.55;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 6px;
+}
+
+.query-warning-list > div + div {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed #fdba74;
+}
+
+.invoice-table-shell {
+  min-height: 360px;
+}
+
+.invoice-data-table .ant-checkbox-inner {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.invoice-data-table .ant-checkbox-inner::after {
+  width: 6px;
+  height: 11px;
+}
+
+.invoice-data-table * {
+  scrollbar-width: auto;
+  scrollbar-color: #2563eb #dbeafe;
+}
+
+.invoice-data-table *::-webkit-scrollbar,
+.currency-summary-list::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.invoice-data-table *::-webkit-scrollbar-track,
+.currency-summary-list::-webkit-scrollbar-track {
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
+.invoice-data-table *::-webkit-scrollbar-thumb,
+.currency-summary-list::-webkit-scrollbar-thumb {
+  min-width: 44px;
+  min-height: 44px;
+  background: #2563eb;
+  border: 3px solid #dbeafe;
+  border-radius: 8px;
+}
+
+.invoice-data-table *::-webkit-scrollbar-thumb:hover,
+.currency-summary-list::-webkit-scrollbar-thumb:hover {
+  background: #1d4ed8;
+}
+
+.invoice-data-table *::-webkit-scrollbar-corner {
+  background: #dbeafe;
+}
+
+
+/* v1.1.0 frontend fix2: fixed program navigation and invoice table UX */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 1px 8px rgba(15, 23, 42, 0.2);
+}
+
+.app-horizontal-menu {
+  position: sticky;
+  top: 64px;
+  z-index: 999;
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.app-horizontal-menu .ant-menu-horizontal {
+  min-width: 0;
+  border-bottom: 0;
+}
+
+.app-content {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.invoice-table-shell {
+  width: 100%;
+  min-width: 0;
+}
+
+.invoice-data-table .invoice-partner-cell {
+  white-space: normal !important;
+}
+
+@media (max-width: 900px) {
+  .app-horizontal-menu {
+    position: static;
+  }
+}
+
+/* Frontend spec: compact invoice table cells */
+/* =========================================================
+   TABLE CELL - PARTNER
+   Tên đối tác hiển thị tối đa 2 dòng.
+   Tooltip sẽ cung cấp tên đầy đủ.
+   ========================================================= */
+.invoice-partner-name {
+  display: -webkit-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  line-height: 20px;
+  max-height: 40px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+/* =========================================================
+   TABLE CELL - INVOICE TYPE
+   Chỉ hiển thị một dòng; phần vượt quá chiều rộng dùng ellipsis.
+   ========================================================= */
+.invoice-type-label {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+/* =========================================================
+   TABLE CELL - LOOKUP CODE
+   Giảm chiều rộng nhưng vẫn xem đầy đủ bằng Tooltip.
+   ========================================================= */
+.invoice-lookup-code {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+
+
+/* Invoice table column visibility chooser */
+.invoice-column-chooser {
+  width: min(420px, calc(100vw - 48px));
+  padding: 4px;
+}
+
+.invoice-column-chooser-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.invoice-column-selection-note {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.invoice-column-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+  width: 100%;
+  max-height: min(420px, 55vh);
+  overflow-y: auto;
+  padding: 4px 2px 10px;
+}
+
+.invoice-column-checkboxes .ant-checkbox-wrapper {
+  min-width: 0;
+  margin-inline-start: 0;
+  padding: 5px 4px;
+  border-radius: 6px;
+}
+
+.invoice-column-checkboxes .ant-checkbox-wrapper:hover {
+  background: #f1f5f9;
+}
+
+.invoice-column-chooser-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 640px) {
+  .invoice-column-checkboxes {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   INVOICE TABLE - RESPONSIVE DESKTOP LAYOUT
+   Width profiles are selected in invoice-table-layout.ts from the actual
+   table container width (HD, HD+, 1080p, 2K).
+   ========================================================= */
+.invoice-data-table {
+  --invoice-table-font-size: 13px;
+  --invoice-cell-padding-y: 6px;
+  --invoice-cell-padding-x: 9px;
+  --invoice-partner-line-height: 18px;
+  --invoice-row-min-height: 46px;
+  --invoice-header-line-height: 16px;
+}
+
+.invoice-table-profile-hd {
+  --invoice-table-font-size: 12px;
+  --invoice-cell-padding-y: 5px;
+  --invoice-cell-padding-x: 7px;
+  --invoice-partner-line-height: 17px;
+  --invoice-row-min-height: 44px;
+  --invoice-header-line-height: 15px;
+}
+
+.invoice-table-profile-hd-plus {
+  --invoice-table-font-size: 13px;
+  --invoice-cell-padding-y: 5px;
+  --invoice-cell-padding-x: 8px;
+  --invoice-partner-line-height: 17px;
+  --invoice-row-min-height: 44px;
+  --invoice-header-line-height: 16px;
+}
+
+.invoice-table-profile-full-hd {
+  --invoice-table-font-size: 13px;
+  --invoice-cell-padding-y: 6px;
+  --invoice-cell-padding-x: 9px;
+  --invoice-partner-line-height: 18px;
+  --invoice-row-min-height: 46px;
+  --invoice-header-line-height: 16px;
+}
+
+.invoice-table-profile-two-k {
+  --invoice-table-font-size: 13px;
+  --invoice-cell-padding-y: 7px;
+  --invoice-cell-padding-x: 10px;
+  --invoice-partner-line-height: 18px;
+  --invoice-row-min-height: 48px;
+  --invoice-header-line-height: 16px;
+}
+
+.invoice-data-table .ant-table {
+  font-size: var(--invoice-table-font-size);
+}
+
+.invoice-data-table .ant-table-thead > tr > th {
+  padding: 7px var(--invoice-cell-padding-x) !important;
+  vertical-align: middle;
+  line-height: var(--invoice-header-line-height);
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.invoice-table-profile-hd .ant-table-thead > tr > th {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+.invoice-data-table .ant-table-tbody > tr > td {
+  min-height: var(--invoice-row-min-height);
+  padding: var(--invoice-cell-padding-y) var(--invoice-cell-padding-x) !important;
+  vertical-align: middle;
+}
+
+.invoice-data-table .ant-table-tbody > tr {
+  height: var(--invoice-row-min-height);
+}
+
+/* The two generated control columns must never absorb free table width. */
+.invoice-data-table .ant-table-row-expand-icon-cell,
+.invoice-data-table .ant-table-selection-column {
+  padding-inline: 4px !important;
+  text-align: center !important;
+  white-space: nowrap;
+}
+
+.invoice-data-table .ant-table-row-expand-icon {
+  margin-inline-end: 0;
+}
+
+.invoice-data-table .ant-checkbox-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Keep sort/filter affordances compact so the title owns the usable width. */
+.invoice-data-table .ant-table-column-sorters,
+.invoice-data-table .ant-table-filter-column {
+  gap: 4px;
+}
+
+.invoice-data-table .ant-table-column-title {
+  min-width: 0;
+}
+
+.invoice-data-table .ant-table-column-sorter,
+.invoice-data-table .ant-table-filter-trigger {
+  flex: 0 0 auto;
+  margin-inline: 0;
+}
+
+.invoice-single-line-cell,
+.invoice-type-label,
+.invoice-lookup-code,
+.invoice-currency-value {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.invoice-cell-identifier,
+.invoice-cell-date,
+.invoice-cell-currency,
+.invoice-cell-money,
+.invoice-cell-status,
+.invoice-cell-nowrap,
+.invoice-cell-actions {
+  white-space: nowrap;
+}
+
+.invoice-cell-identifier,
+.invoice-cell-date,
+.invoice-cell-money,
+.invoice-currency-value,
+.invoice-lookup-code {
+  font-variant-numeric: tabular-nums;
+}
+
+.invoice-cell-date,
+.invoice-cell-currency {
+  text-align: center;
+}
+
+.invoice-cell-money {
+  text-align: right;
+}
+
+.invoice-money-value {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.invoice-cell-grand-total .invoice-money-value {
+  font-weight: 600;
+}
+
+.invoice-partner-name {
+  display: -webkit-box;
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(var(--invoice-partner-line-height) * 2);
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: var(--invoice-partner-line-height);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.invoice-status-tag {
+  display: inline-block;
+  max-width: 100%;
+  margin-inline-end: 0;
+  overflow: hidden;
+  vertical-align: middle;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.invoice-table-profile-hd .invoice-status-tag {
+  padding-inline: 5px;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+/*
+ * Deliberate right-side spacer. It absorbs free viewport width after all
+ * business columns have reached their profile widths. This is intentionally
+ * different from allowing the expand column or a data column to stretch.
+ */
+.invoice-data-table .invoice-layout-spacer-cell {
+  padding: 0 !important;
+  pointer-events: none;
+}
+
+.invoice-data-table .invoice-layout-spacer-cell::before {
+  display: none !important;
+}
+
+/* Horizontal scrolling appears only when the selected business columns need it. */
+.invoice-data-table .ant-table-body,
+.invoice-data-table .ant-table-content {
+  overscroll-behavior-x: contain;
+}
+
+@media (max-width: 1439px) {
+  .invoice-table-shell .ant-card-head {
+    min-height: 42px;
+  }
+
+  .invoice-table-shell .ant-card-head-title,
+  .invoice-table-shell .ant-card-extra {
+    padding-block: 7px;
+  }
+}
+
+/* =========================================================
+   v1.1.0 - COMPACT QUERY BAR / TOP DATA ACTIONS / TABLE WIDTH FIX
+   ========================================================= */
+
+/* Hàng menu chương trình + nhóm tác vụ dữ liệu dùng chung một cao độ.
+   Nhóm tác vụ dữ liệu có nền riêng để phân biệt với điều hướng. */
+.app-horizontal-menu {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-bottom: 1px solid #e5e7eb;
+  scrollbar-width: none;
+}
+
+.app-horizontal-menu::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.app-navigation-menu {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.app-navigation-menu .ant-menu-horizontal {
+  width: max-content;
+  min-width: max-content;
+  line-height: 42px;
+}
+
+.app-data-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  margin-left: 10px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  background: #f0f7ff;
+  border-inline: 1px solid #d6e4ff;
+}
+
+.app-data-actions .ant-btn {
+  height: 28px;
+  padding-inline: 9px;
+  font-size: 12px;
+}
+
+.app-content {
+  width: 100%;
+  min-width: 0;
+  min-height: 280px;
+  padding: 10px 12px 12px;
+  overflow-x: hidden;
+  background: var(--hddt-color-bg-app);
+}
+
+/* Thanh điều kiện tra cứu: bỏ lựa chọn nguồn và ttxly khỏi giao diện.
+   Các nút nghiệp vụ chính đứng ngay sau Số hóa đơn + Ký hiệu. */
+.invoice-query-card .ant-card-body {
+  padding: 8px 10px;
+}
+
+.invoice-query-form {
+  display: flex;
+  align-items: center;
+  row-gap: 6px;
+  width: 100%;
+}
+
+.invoice-query-form .ant-form-item {
+  margin: 0 8px 0 0;
+}
+
+.invoice-query-date .ant-picker {
+  width: 230px;
+}
+
+.invoice-query-document-type {
+  width: 118px;
+}
+
+.invoice-query-tax-code {
+  width: 125px;
+}
+
+.invoice-query-invoice-no {
+  width: 112px;
+}
+
+.invoice-query-series {
+  width: 100px;
+}
+
+.invoice-query-primary-actions {
+  flex: 0 0 auto;
+}
+
+.invoice-query-primary-actions .ant-btn {
+  height: 30px;
+  padding-inline: 10px;
+  font-size: 12px;
+}
+
+.invoice-query-quick-filter {
+  flex: 1 1 190px;
+  min-width: 170px;
+  max-width: 250px;
+}
+
+.invoice-query-quick-filter .ant-input-affix-wrapper {
+  width: 100%;
+}
+
+/* Hàng tổng hợp thấp hơn: bỏ Card header riêng, giữ title/value trong body. */
+.invoice-summary-row {
+  margin-top: 0 !important;
+}
+
+.invoice-summary-row .ant-col {
+  min-height: 64px;
+}
+
+.invoice-summary-card {
+  min-height: 64px;
+  max-height: 72px;
+  border-color: #d7dee8;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.invoice-summary-card .ant-card-body {
+  height: 100%;
+  padding: 7px 10px;
+}
+
+.invoice-summary-label {
+  display: block;
+  min-width: 0;
+  margin-bottom: 4px;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.invoice-summary-count-value {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.invoice-summary-count-value strong {
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.invoice-summary-count-value span {
+  overflow: hidden;
+  color: #475569;
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+.currency-summary .ant-card-head,
+.currency-summary .ant-card-head-wrapper {
+  display: none;
+}
+
+.currency-summary-list {
+  display: grid;
+  gap: 0;
+  max-height: 38px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.currency-summary-line {
+  gap: 8px;
+  min-height: 18px;
+  padding: 0;
+  border-bottom: 0;
+  line-height: 18px;
+}
+
+.currency-code {
+  min-width: 36px;
+  font-size: 11px;
+}
+
+.currency-value {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.currency-summary-empty {
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.currency-summary-emphasized {
+  background: #f4f8ff;
+  border-color: #adc6ff;
+}
+
+.currency-summary-emphasized .invoice-summary-label,
+.currency-summary-emphasized .currency-value {
+  color: #0b4da2;
+}
+
+/* ---------------------------------------------------------
+   FIX QUAN TRỌNG CHO ĐỘ RỘNG BẢNG
+
+   Trước đây expand-column là cột do Ant Design sinh tự động. Khi table-layout
+   ở chế độ auto + fixed left, browser có thể cấp toàn bộ phần width dư cho
+   cột này, tạo ra vùng trắng rất lớn ở bên trái như ảnh kiểm tra thực tế.
+
+   Giải pháp:
+   1) ép table-layout: fixed;
+   2) ép min/max width của hai cột điều khiển theo CSS variable;
+   3) chỉ fixed cột điều khiển khi bảng thật sự overflow ngang;
+   4) spacer kỹ thuật (nếu có) chỉ hấp thụ khoảng trống ở CUỐI bảng.
+   --------------------------------------------------------- */
+.invoice-data-table .ant-table-container table,
+.invoice-data-table .ant-table-content table,
+.invoice-data-table .ant-table-body table {
+  table-layout: fixed !important;
+}
+
+.invoice-data-table col.ant-table-expand-icon-col {
+  width: var(--invoice-expand-width) !important;
+  min-width: var(--invoice-expand-width) !important;
+  max-width: var(--invoice-expand-width) !important;
+}
+
+.invoice-data-table col.ant-table-selection-col {
+  width: var(--invoice-selection-width) !important;
+  min-width: var(--invoice-selection-width) !important;
+  max-width: var(--invoice-selection-width) !important;
+}
+
+.invoice-data-table .ant-table-row-expand-icon-cell {
+  box-sizing: border-box;
+  width: var(--invoice-expand-width) !important;
+  min-width: var(--invoice-expand-width) !important;
+  max-width: var(--invoice-expand-width) !important;
+  padding-inline: 4px !important;
+  text-align: center !important;
+}
+
+.invoice-data-table .ant-table-selection-column {
+  box-sizing: border-box;
+  width: var(--invoice-selection-width) !important;
+  min-width: var(--invoice-selection-width) !important;
+  max-width: var(--invoice-selection-width) !important;
+  padding-inline: 4px !important;
+  text-align: center !important;
+}
+
+.invoice-data-table .invoice-layout-spacer-cell {
+  padding: 0 !important;
+  border-inline-end: 0 !important;
+  pointer-events: none;
+}
+
+.invoice-data-table .ant-table-thead .invoice-layout-spacer-cell {
+  background: #fafafa !important;
+}
+
+.invoice-data-table .ant-table-tbody .invoice-layout-spacer-cell {
+  background: #fff !important;
+}
+
+@media (max-width: 1439px) {
+  .app-horizontal-menu {
+    padding-inline: 8px;
+  }
+
+  .app-data-actions {
+    gap: 4px;
+    margin-left: 6px;
+    padding-inline: 6px;
+  }
+
+  .app-data-actions .ant-btn {
+    padding-inline: 7px;
+  }
+
+  .invoice-query-date .ant-picker {
+    width: 220px;
+  }
+
+  .invoice-query-document-type {
+    width: 110px;
+  }
+
+  .invoice-query-tax-code {
+    width: 118px;
+  }
+
+  .invoice-query-invoice-no {
+    width: 105px;
+  }
+
+  .invoice-query-series {
+    width: 92px;
+  }
+
+  .invoice-query-primary-actions .ant-btn {
+    padding-inline: 8px;
+  }
+
+  .invoice-query-quick-filter {
+    max-width: 220px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .invoice-query-primary-actions,
+  .invoice-query-quick-filter {
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-horizontal-menu {
+    position: static;
+  }
+
+  .invoice-summary-card {
+    max-height: none;
+  }
+}
+
+/* =========================================================
+   UX/UI PHASE 1 + PHASE 2 BASELINE
+   Desktop/data-centric. Summary remains compact (64–72px).
+   ========================================================= */
+
+.app-shell {
+  color: var(--hddt-color-text-primary);
+  background: var(--hddt-color-bg-app);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--hddt-header-height);
+  padding: 0 var(--hddt-space-6);
+  color: #fff;
+  background: #001529;
+}
+
+.app-title.ant-typography {
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.app-session-tax-code.ant-typography,
+.app-header-text-button.ant-btn {
+  color: #fff;
+}
+
+.app-header-exit-button.ant-btn {
+  color: #ff7875;
+}
+
+.app-header-text-button.ant-btn:hover,
+.app-header-text-button.ant-btn:focus-visible {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.10) !important;
+}
+
+.app-content {
+  background: var(--hddt-color-bg-app);
+}
+
+.app-horizontal-menu {
+  min-height: var(--hddt-menu-height);
+  background: var(--hddt-color-bg-surface);
+  border-bottom-color: var(--hddt-color-border-light);
+}
+
+.app-navigation-menu .ant-menu-item {
+  font-size: var(--hddt-font-size-body);
+}
+
+.app-data-actions {
+  background: var(--hddt-color-data-actions-bg);
+  border-inline-color: var(--hddt-color-data-actions-border);
+}
+
+.app-data-action-button.ant-btn {
+  color: var(--hddt-color-text-primary);
+  border-color: #bfdbfe;
+  background: rgba(255, 255, 255, 0.88);
+  transition: border-color var(--hddt-transition-fast), background var(--hddt-transition-fast), box-shadow var(--hddt-transition-fast);
+}
+
+.app-data-action-button.ant-btn:hover:not(:disabled) {
+  color: var(--hddt-color-primary-dark);
+  border-color: var(--hddt-color-primary);
+  background: #fff;
+  box-shadow: var(--hddt-shadow-xs);
+}
+
+.invoice-query-card,
+.invoice-table-card {
+  border-color: var(--hddt-color-border-light);
+  box-shadow: var(--hddt-shadow-xs);
+}
+
+.invoice-query-form {
+  display: block;
+  width: 100%;
+}
+
+.invoice-query-main-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  width: 100%;
+}
+
+.invoice-query-main-row > .ant-form-item {
+  margin: 0 8px 0 0;
+}
+
+.invoice-query-advanced-toggle {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+.invoice-query-advanced-toggle .ant-btn {
+  height: 30px;
+  padding-inline: 8px;
+  color: var(--hddt-color-text-secondary);
+  font-size: var(--hddt-font-size-small);
+}
+
+.invoice-advanced-filter-panel {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) repeat(5, minmax(150px, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--hddt-color-bg-subtle);
+  border: 1px solid var(--hddt-color-border-light);
+  border-radius: var(--hddt-radius-md);
+}
+
+.invoice-advanced-filter-panel > .ant-form-item,
+.invoice-advanced-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+.invoice-advanced-filter-panel > .ant-form-item .ant-form-item-row {
+  display: block;
+}
+
+.invoice-advanced-filter-panel > .ant-form-item .ant-form-item-label {
+  padding: 0;
+  text-align: left;
+}
+
+.invoice-advanced-filter-panel > .ant-form-item .ant-form-item-label > label,
+.invoice-advanced-label.ant-typography {
+  height: auto;
+  color: var(--hddt-color-text-secondary);
+  font-size: var(--hddt-font-size-caption);
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.invoice-advanced-filter-panel .ant-input,
+.invoice-advanced-filter-panel .ant-select,
+.invoice-advanced-filter-panel .ant-select-selector {
+  width: 100%;
+}
+
+.invoice-filter-chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--hddt-color-border-light);
+}
+
+.invoice-filter-chips-label {
+  margin-right: 2px;
+  font-size: var(--hddt-font-size-caption);
+}
+
+.invoice-filter-chips .ant-tag {
+  max-width: 320px;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.invoice-filter-chips .ant-btn-link {
+  height: 24px;
+  padding-inline: 5px;
+  font-size: var(--hddt-font-size-small);
+}
+
+/* Summary is deliberately NOT increased. Desktop target remains 64–72px. */
+.invoice-summary-row .ant-col {
+  min-height: 64px;
+}
+
+.invoice-summary-card {
+  min-height: 64px;
+  max-height: 72px;
+  border-color: var(--hddt-color-border-light);
+  background: var(--hddt-color-bg-surface);
+  box-shadow: var(--hddt-shadow-xs);
+  transition: border-color var(--hddt-transition-fast), box-shadow var(--hddt-transition-fast);
+}
+
+.invoice-summary-card:hover {
+  border-color: #bfdbfe;
+  box-shadow: var(--hddt-shadow-sm);
+}
+
+.currency-summary-emphasized {
+  background: #f4f8ff;
+  border-color: #adc6ff;
+}
+
+.invoice-data-table .ant-table-thead > tr > th {
+  color: var(--hddt-color-text-primary);
+  font-weight: 600;
+  background: var(--hddt-color-bg-subtle) !important;
+  border-bottom-color: var(--hddt-color-border-light);
+}
+
+.invoice-data-table .ant-table-column-sorter-up.active,
+.invoice-data-table .ant-table-column-sorter-down.active,
+.invoice-data-table .ant-table-filter-trigger.active {
+  color: var(--hddt-color-primary) !important;
+}
+
+.invoice-data-table .ant-table-thead > tr > th.ant-table-column-sort {
+  background: #eef4ff !important;
+  box-shadow: inset 3px 0 0 var(--hddt-color-primary);
+}
+
+/* Zebra striping works for both classic and virtual Ant Design row structures. */
+.invoice-data-table .invoice-row-even > td,
+.invoice-data-table .invoice-row-even > .ant-table-cell {
+  background: #ffffff;
+}
+
+.invoice-data-table .invoice-row-odd > td,
+.invoice-data-table .invoice-row-odd > .ant-table-cell {
+  background: #fafafa;
+}
+
+.invoice-data-table .ant-table-row:hover > td,
+.invoice-data-table .ant-table-row:hover > .ant-table-cell {
+  background: var(--hddt-color-bg-hover) !important;
+}
+
+.invoice-data-table .ant-table-row.ant-table-row-selected > td,
+.invoice-data-table .ant-table-row.ant-table-row-selected > .ant-table-cell {
+  background: #e6f4ff !important;
+  box-shadow: inset 0 1px 0 #bae0ff, inset 0 -1px 0 #bae0ff;
+}
+
+.invoice-data-table .ant-table-row.ant-table-row-selected:hover > td,
+.invoice-data-table .ant-table-row.ant-table-row-selected:hover > .ant-table-cell {
+  background: #d8ecff !important;
+}
+
+.invoice-data-table .ant-table-tbody .invoice-layout-spacer-cell,
+.invoice-data-table .invoice-row-even .invoice-layout-spacer-cell,
+.invoice-data-table .invoice-row-odd .invoice-layout-spacer-cell {
+  background: inherit !important;
+}
+
+.invoice-money-value {
+  color: var(--hddt-color-text-primary);
+  font-feature-settings: "tnum";
+}
+
+.invoice-cell-grand-total .invoice-money-value {
+  font-weight: 600;
+}
+
+.invoice-status-tag {
+  font-weight: 500;
+}
+
+.invoice-column-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 8px 0 10px;
+  padding: 8px;
+  background: var(--hddt-color-bg-subtle);
+  border: 1px solid var(--hddt-color-border-light);
+  border-radius: var(--hddt-radius-md);
+}
+
+.invoice-column-chooser-actions {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.invoice-selection-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 38px;
+  padding: 5px 10px;
+  background: #eef6ff;
+  border-bottom: 1px solid #bfdbfe;
+}
+
+.invoice-table-scroll-affordance {
+  position: relative;
+  isolation: isolate;
+}
+
+.invoice-table-scroll-affordance::before,
+.invoice-table-scroll-affordance::after {
+  position: absolute;
+  top: 38px;
+  bottom: 0;
+  z-index: 20;
+  width: 16px;
+  opacity: 0;
+  pointer-events: none;
+  content: "";
+  transition: opacity var(--hddt-transition-fast);
+}
+
+.invoice-table-scroll-affordance::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.14), rgba(15, 23, 42, 0));
+}
+
+.invoice-table-scroll-affordance::after {
+  right: 0;
+  background: linear-gradient(270deg, rgba(15, 23, 42, 0.14), rgba(15, 23, 42, 0));
+}
+
+.invoice-table-scroll-affordance.can-scroll-left::before,
+.invoice-table-scroll-affordance.can-scroll-right::after {
+  opacity: 1;
+}
+
+.invoice-expanded-detail {
+  margin: 0;
+  padding: 10px 12px 12px;
+  background: var(--hddt-color-bg-subtle);
+  border-block: 1px solid var(--hddt-color-border-light);
+}
+
+.invoice-expanded-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.invoice-expanded-lines-table {
+  border: 1px solid var(--hddt-color-border-light);
+  border-radius: var(--hddt-radius-sm);
+  overflow: hidden;
+}
+
+.invoice-data-table .ant-empty {
+  margin-block: 24px;
+}
+
+.invoice-data-table .ant-table-placeholder .ant-table-cell {
+  background: #fff !important;
+}
+
+/* Keep generated control columns strict even when the virtual table recalculates. */
+.invoice-data-table .ant-table-row-expand-icon-cell,
+.invoice-data-table .ant-table-selection-column {
+  flex: 0 0 auto !important;
+}
+
+@media (max-width: 1799px) {
+  .invoice-advanced-filter-panel {
+    grid-template-columns: repeat(3, minmax(170px, 1fr));
+  }
+}
+
+@media (max-width: 1439px) {
+  .app-header {
+    padding-inline: 16px;
+  }
+
+  .invoice-query-quick-filter {
+    flex-basis: 180px;
+  }
+
+  .invoice-query-advanced-toggle {
+    margin-left: 0 !important;
+  }
+
+  .invoice-advanced-filter-panel {
+    grid-template-columns: repeat(2, minmax(170px, 1fr));
+  }
+}
+
+@media (max-width: 1099px) {
+  .app-horizontal-menu {
+    position: static;
+  }
+
+  .invoice-query-main-row {
+    align-items: flex-start;
+  }
+
+  .invoice-query-primary-actions {
+    flex-basis: 100%;
+  }
+
+  .invoice-query-quick-filter {
+    flex: 1 1 260px;
+    max-width: none;
+  }
+
+  .invoice-selection-action-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+/* =========================================================
+   INVOICE RELATION POPOVER
+   Replacement / adjustment relationship is resolved entirely
+   from the normalized dataset in RAM. No hover/focus API calls.
+   ========================================================= */
+.invoice-relation-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--hddt-radius-sm, 4px);
+  cursor: help;
+}
+
+.invoice-relation-trigger:hover .invoice-relation-trigger-content,
+.invoice-relation-trigger:focus-visible .invoice-relation-trigger-content {
+  color: var(--hddt-color-primary, #1890ff);
+}
+
+.invoice-relation-trigger:focus-visible {
+  outline: 2px solid var(--hddt-color-primary, #1890ff);
+  outline-offset: 2px;
+}
+
+.invoice-relation-trigger-content {
+  min-width: 0;
+  max-width: 100%;
+  transition: color var(--hddt-transition-fast, 150ms ease);
+}
+
+.invoice-relation-number-trigger {
+  width: 100%;
+}
+
+.invoice-relation-number-trigger .invoice-relation-trigger-content {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.invoice-relation-status-trigger {
+  width: auto;
+  max-width: 100%;
+}
+
+.invoice-relation-status-trigger .invoice-relation-trigger-content {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.invoice-relation-indicator {
+  flex: 0 0 auto;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.invoice-relation-trigger:hover .invoice-relation-indicator,
+.invoice-relation-trigger:focus-visible .invoice-relation-indicator {
+  color: var(--hddt-color-primary, #1890ff);
+}
+
+.invoice-relation-popover .ant-popover-inner {
+  width: min(360px, calc(100vw - 32px));
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 10px 12px;
+  border: 1px solid var(--hddt-color-border-light, #e2e8f0);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.invoice-relation-content {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.invoice-relation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.invoice-relation-heading .ant-tag {
+  flex: 0 0 auto;
+  margin-inline-end: 0;
+  font-size: 11px;
+}
+
+.invoice-relation-list {
+  display: grid;
+  gap: 5px;
+}
+
+.invoice-relation-related-button.ant-btn,
+.invoice-relation-related-static {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 48px;
+  padding: 7px 8px;
+  text-align: left;
+  white-space: normal;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--hddt-radius-sm, 4px);
+}
+
+.invoice-relation-related-button.ant-btn {
+  color: inherit;
+}
+
+.invoice-relation-related-button.ant-btn:hover,
+.invoice-relation-related-button.ant-btn:focus-visible {
+  color: inherit;
+  background: #eef6ff;
+  border-color: #91caff;
+}
+
+.invoice-relation-related-button.ant-btn:focus-visible {
+  outline: 2px solid var(--hddt-color-primary, #1890ff);
+  outline-offset: 1px;
+}
+
+.invoice-relation-related-main,
+.invoice-relation-related-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.invoice-relation-related-main {
+  font-variant-numeric: tabular-nums;
+}
+
+.invoice-relation-related-meta {
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+.invoice-relation-more {
+  display: block;
+  padding-inline: 4px;
+  font-size: 11px;
+}
+
+.invoice-relation-availability {
+  padding: 6px 8px;
+  line-height: 1.45;
+  background: #fafafa;
+  border-left: 3px solid #cbd5e1;
+  border-radius: 2px;
+}
+
+.invoice-relation-divider.ant-divider {
+  margin: 0;
+}
+
+.invoice-relation-description.ant-typography {
+  max-width: 100%;
+  margin: 0;
+  color: var(--hddt-color-text-secondary, #475569);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  .invoice-relation-popover .ant-popover-inner {
+    width: min(330px, calc(100vw - 24px));
+    max-width: min(330px, calc(100vw - 24px));
+  }
+}
+
+/* =========================================================
+   HDDT-CONN TOP BAR + SUMMARY BAR + HHDV FULLPAGE VIEWER
+   ========================================================= */
+
+/* One top bar: navigation + data actions | brand | session. */
+.app-header.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--hddt-z-header, 1000);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 10px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 10px;
+  line-height: normal;
+  background: #001529;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.app-topbar-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.app-topbar-left::-webkit-scrollbar {
+  height: 3px;
+}
+
+.app-topbar-left::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+}
+
+.app-topbar-menu.ant-menu-horizontal {
+  flex: 0 0 auto;
+  min-width: max-content;
+  height: 46px;
+  line-height: 46px;
+  background: transparent;
+  border-bottom: 0;
+}
+
+.app-topbar-menu.ant-menu-horizontal > .ant-menu-item,
+.app-topbar-menu.ant-menu-horizontal > .ant-menu-submenu {
+  height: 46px;
+  padding-inline: 9px;
+  line-height: 46px;
+  font-size: 12px;
+}
+
+.app-topbar-menu .ant-menu-item-icon {
+  margin-inline-end: 5px;
+}
+
+.app-topbar-data-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 4px 6px;
+  background: rgba(24, 144, 255, 0.12);
+  border: 1px solid rgba(145, 213, 255, 0.20);
+  border-radius: var(--hddt-radius-sm, 4px);
+}
+
+.app-topbar-action-button.ant-btn {
+  height: 28px;
+  padding-inline: 7px;
+  color: #e6f4ff;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.app-topbar-action-button.ant-btn:hover:not(:disabled),
+.app-topbar-action-button.ant-btn:focus-visible:not(:disabled) {
+  color: #fff !important;
+  background: rgba(24, 144, 255, 0.26) !important;
+  border-color: #69b1ff !important;
+}
+
+.app-topbar-action-button.ant-btn:disabled {
+  color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.app-topbar-brand {
+  min-width: 96px;
+  padding-inline: 10px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.app-topbar .app-session-group {
+  flex-wrap: nowrap;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.app-topbar .app-session-tax-code.ant-typography {
+  max-width: 190px;
+  overflow: hidden;
+  color: #fff;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-topbar .app-header-text-button.ant-btn,
+.app-topbar .app-header-exit-button.ant-btn {
+  height: 30px;
+  padding-inline: 7px;
+}
+
+/* The old second-level horizontal bar is no longer rendered. */
+.app-horizontal-menu {
+  display: none;
+}
+
+/* Summary: one 64–72px horizontal strip, never a stack of tall cards. */
+.invoice-summary-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  height: 68px;
+  min-height: 68px;
+  max-height: 68px;
+  overflow: hidden;
+}
+
+.invoice-summary-count-block.ant-card,
+.invoice-currency-summary-card.ant-card {
+  height: 68px;
+  min-height: 68px;
+  max-height: 68px;
+  overflow: hidden;
+  background: var(--hddt-color-bg-surface, #fff);
+  border-color: var(--hddt-color-border-light, #e2e8f0);
+  box-shadow: var(--hddt-shadow-xs, 0 1px 2px rgba(15, 23, 42, 0.05));
+}
+
+.invoice-summary-count-block {
+  flex: 0 0 248px;
+  width: 248px;
+}
+
+.invoice-summary-count-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 66px;
+}
+
+.invoice-summary-count-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 5px 7px;
+  text-align: center;
+  cursor: help;
+}
+
+.invoice-summary-count-cell + .invoice-summary-count-cell {
+  border-left: 1px solid var(--hddt-color-border-light, #e2e8f0);
+}
+
+.invoice-summary-count-cell strong {
+  color: var(--hddt-color-text-primary, #0f172a);
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+}
+
+.invoice-summary-count-cell span {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--hddt-color-text-secondary, #475569);
+  font-size: 10px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoice-summary-currency-strip {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+
+.invoice-summary-currency-strip::-webkit-scrollbar {
+  height: 3px;
+}
+
+.invoice-summary-currency-strip::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+}
+
+.invoice-summary-currency-item {
+  flex: 1 0 252px;
+  min-width: 252px;
+  max-width: 330px;
+}
+
+.invoice-currency-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.72fr) minmax(142px, 1.28fr);
+  grid-template-rows: 33px 33px;
+  height: 66px;
+}
+
+.invoice-currency-quadrant,
+.invoice-summary-metric {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 4px 7px;
+  cursor: help;
+}
+
+.invoice-currency-code-quadrant {
+  justify-content: center;
+  background: #f0f7ff;
+  border-right: 1px solid var(--hddt-color-border-light, #e2e8f0);
+  border-bottom: 1px solid var(--hddt-color-border-light, #e2e8f0);
+}
+
+.invoice-summary-metric:nth-child(2) {
+  justify-content: flex-end;
+  border-bottom: 1px solid var(--hddt-color-border-light, #e2e8f0);
+}
+
+.invoice-summary-metric:nth-child(3) {
+  justify-content: flex-end;
+  background: #f8fbff;
+  border-right: 1px solid var(--hddt-color-border-light, #e2e8f0);
+}
+
+.invoice-summary-metric:nth-child(4) {
+  justify-content: flex-end;
+}
+
+.invoice-currency-code {
+  color: #0958d9;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.25px;
+}
+
+.invoice-summary-metric-value {
+  width: 100%;
+  overflow: hidden;
+  color: var(--hddt-color-text-primary, #0f172a);
+  font-size: 12px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoice-summary-metric-total .invoice-summary-metric-value {
+  font-weight: 700;
+}
+
+.invoice-summary-count-cell:focus-visible,
+.invoice-currency-quadrant:focus-visible,
+.invoice-summary-metric:focus-visible {
+  position: relative;
+  z-index: 2;
+  outline: 2px solid var(--hddt-color-primary, #1890ff);
+  outline-offset: -2px;
+}
+
+.invoice-summary-empty-currency {
+  display: grid;
+  min-width: 220px;
+  place-items: center;
+  border: 1px dashed var(--hddt-color-border, #cbd5e1);
+  border-radius: var(--hddt-radius-sm, 4px);
+  background: #fff;
+}
+
+/* Amount cells are now the HHDV-detail affordance; no expand column is used. */
+.invoice-detail-amount-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  min-width: 0;
+  margin: -2px 0;
+  padding: 2px 4px;
+  color: inherit;
+  font: inherit;
+  text-align: right;
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  cursor: zoom-in;
+  transition: color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.invoice-detail-amount-trigger:hover {
+  color: #0958d9;
+  background: #eaf4ff;
+  box-shadow: inset 0 -1px 0 #91caff;
+}
+
+.invoice-detail-amount-trigger:focus-visible {
+  color: #0958d9;
+  background: #eaf4ff;
+  outline: 2px solid #1677ff;
+  outline-offset: 1px;
+}
+
+/* Resizable full-page HHDV popup. */
+.invoice-lines-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  padding: 16px;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(1px);
+}
+
+.invoice-lines-dialog {
+  display: flex;
+  flex-direction: column;
+  width: calc(100vw - 32px);
+  height: calc(100vh - 32px);
+  min-width: min(720px, calc(100vw - 24px));
+  min-height: min(420px, calc(100vh - 24px));
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  resize: both;
+  background: #fff;
+  border: 1px solid #b8c6d9;
+  border-radius: 8px;
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.26);
+}
+
+.invoice-lines-dialog-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 46px;
+  padding: 7px 10px 7px 12px;
+  background: #f8fbff;
+  border-bottom: 1px solid #dbe5f0;
+}
+
+.invoice-lines-dialog-title-wrap {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 10px;
+}
+
+.invoice-lines-dialog-title {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invoice-lines-dialog-meta {
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.invoice-lines-dialog-hint {
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding: 4px 12px;
+  background: #fff;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.invoice-lines-dialog-hint .ant-typography {
+  font-size: 11px;
+}
+
+.invoice-lines-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #fff;
+}
+
+.invoice-lines-fullpage-table .ant-table-thead > tr > th {
+  color: var(--hddt-color-text-primary, #0f172a);
+  font-weight: 600;
+  background: #f8fafc !important;
+}
+
+.invoice-lines-fullpage-table .ant-table-tbody > tr:nth-child(odd) > td {
+  background: #fff;
+}
+
+.invoice-lines-fullpage-table .ant-table-tbody > tr:nth-child(even) > td {
+  background: #fafafa;
+}
+
+.invoice-lines-fullpage-table .ant-table-tbody > tr:hover > td {
+  background: #f0f5ff !important;
+}
+
+.invoice-lines-fullpage-table .ant-table-cell {
+  font-size: 12px;
+}
+
+.invoice-lines-dialog-empty {
+  display: grid;
+  min-height: 320px;
+  place-items: center;
+}
+
+@media (max-width: 1599px) {
+  .app-header.app-topbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    column-gap: 6px;
+    padding-inline: 6px;
+  }
+
+  .app-topbar-menu.ant-menu-horizontal > .ant-menu-item,
+  .app-topbar-menu.ant-menu-horizontal > .ant-menu-submenu {
+    padding-inline: 7px;
+  }
+
+  .app-topbar-action-button.ant-btn {
+    padding-inline: 6px;
+  }
+
+  .app-topbar-brand {
+    min-width: 84px;
+    padding-inline: 6px;
+    font-size: 14px;
+  }
+
+  .app-topbar .app-session-tax-code.ant-typography {
+    max-width: 145px;
+  }
+
+  .invoice-summary-count-block {
+    flex-basis: 224px;
+    width: 224px;
+  }
+
+  .invoice-summary-currency-item {
+    flex-basis: 236px;
+    min-width: 236px;
+  }
+}
+
+@media (max-width: 1099px) {
+  .app-header.app-topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .app-topbar-brand {
+    display: none;
+  }
+
+  .app-topbar .app-session-tax-code.ant-typography {
+    max-width: 110px;
+  }
+
+  .invoice-summary-count-block {
+    flex-basis: 210px;
+    width: 210px;
+  }
+
+  .invoice-summary-currency-item {
+    flex-basis: 228px;
+    min-width: 228px;
+  }
+}
+
+/* v1.2.0 — invoice representation PDF affordance */
+.invoice-pdf-double-click {
+  cursor: zoom-in;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.invoice-pdf-double-click.is-loading {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+
+/* v1.2.0 — TVAN representation PDF viewer */
+.invoice-pdf-viewer-modal .ant-modal-body {
+  padding: 8px 0 0;
+}
+.invoice-pdf-viewer-frame {
+  display: block;
+  width: 100%;
+  height: min(78vh, 980px);
+  min-height: 520px;
+  border: 0;
+  background: #f5f5f5;
+}
+
+/* v1.2.1 — Viettel slider CAPTCHA hotfix */
+.tvan-slider-captcha {
+  width: 100%;
+}
+.tvan-slider-captcha-stage {
+  position: relative;
+  display: inline-block;
+  width: min(100%, 420px);
+  overflow: hidden;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fafafa;
+}
+.tvan-slider-captcha-background {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+}
+.tvan-slider-captcha-position {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  background: currentColor;
+  opacity: 0.22;
+}
+.tvan-slider-captcha-piece-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.tvan-slider-captcha-piece {
+  max-width: 88px;
+  max-height: 72px;
+  object-fit: contain;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #fff;
+}
+.tvan-slider-captcha .ant-slider {
+  width: min(calc(100% - 16px), 404px);
+  margin: 14px 8px 8px;
+}

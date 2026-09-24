@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HDDT v1.1.0 - Invoice UI compact mockup</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; color: #172033; font-size: 12px; }
+  .menu { display:flex; align-items:stretch; overflow-x:auto; white-space:nowrap; background:#fff; border-bottom:1px solid #e5e7eb; }
+  .nav, .actions { display:flex; align-items:center; min-height:42px; }
+  .nav span { padding: 0 13px; }
+  .nav .active { color:#1677ff; border-bottom:2px solid #1677ff; }
+  .actions { gap:6px; margin-left:10px; padding:4px 8px; background:#f0f7ff; border-left:1px solid #d6e4ff; border-right:1px solid #d6e4ff; }
+  button, input { height:30px; border:1px solid #d9d9d9; border-radius:5px; background:#fff; padding:0 9px; font-size:12px; }
+  button.primary { color:#fff; background:#1677ff; border-color:#1677ff; }
+  .page { padding:10px 12px; }
+  .query { display:flex; flex-wrap:wrap; gap:6px 8px; padding:8px 10px; background:#fff; border:1px solid #eee; border-radius:7px; }
+  .date { width:220px; } .doctype { width:110px; } .tax { width:118px; } .no { width:105px; } .series { width:92px; }
+  .quick { width:210px; min-width:170px; flex:1 1 180px; max-width:240px; }
+  .summary { display:grid; grid-template-columns: 1fr 1fr 2fr 2fr 2fr; gap:8px; margin:10px 0; }
+  .tile { min-height:64px; max-height:72px; padding:7px 10px; background:#fff; border:1px solid #d7dee8; border-radius:7px; box-shadow:0 1px 4px rgba(15,23,42,.06); overflow:hidden; }
+  .tile.total { background:#f4f8ff; border-color:#adc6ff; }
+  .label { display:block; margin-bottom:4px; color:#64748b; font-weight:600; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .count strong { font-size:18px; } .count small { margin-left:5px; color:#475569; }
+  .money { display:flex; justify-content:space-between; line-height:18px; font-variant-numeric: tabular-nums; }
+  .money b { font-size:13px; }
+  .table-card { background:#fff; border:1px solid #eee; border-radius:7px; overflow:hidden; }
+  .table-title { display:flex; justify-content:space-between; align-items:center; height:34px; padding:0 10px; font-weight:700; border-bottom:1px solid #eee; }
+  .viewport { overflow-x:auto; }
+  table { border-collapse:collapse; table-layout:fixed; width:1888px; min-width:100%; }
+  th, td { height:44px; padding:5px 8px; border-bottom:1px solid #eee; text-align:left; overflow:hidden; text-overflow:ellipsis; }
+  th { height:40px; background:#fafafa; font-weight:600; }
+  .expand { width:36px; min-width:36px; max-width:36px; text-align:center; padding:0; }
+  .select { width:44px; min-width:44px; max-width:44px; text-align:center; padding:0; }
+  .datec{width:100px;text-align:center}.seriesc{width:88px}.noc{width:105px}.mst{width:115px}.partner{width:340px}.currency{width:86px;text-align:center}.subtotal{width:140px}.vat{width:130px}.grand{width:155px}.status{width:145px}.spacer{width:404px;padding:0;border-right:0}
+  .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .partner-name { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .tag { display:inline-block; color:#389e0d; background:#f6ffed; border:1px solid #b7eb8f; border-radius:4px; padding:1px 5px; white-space:nowrap; }
+  @media(max-width:1439px){ .summary{grid-template-columns:1fr 1fr 2fr 2fr 2fr}.partner{width:220px}.datec{width:92px}.seriesc{width:72px}.noc{width:88px}.mst{width:104px}.currency{width:72px}.subtotal{width:112px}.vat{width:104px}.grand{width:128px}.status{width:124px}.select{width:40px}.spacer{width:140px} table{width:1332px}.actions button{padding:0 7px} }
+  @media(max-width:900px){ .summary{grid-template-columns:1fr 1fr}.tile{max-height:none}.tile:nth-child(n+3){grid-column:span 2} }
+</style>
+</head>
+<body>
+  <div class="menu">
+    <div class="nav">
+      <span class="active">▣ Mua vào</span><span>▤ Bán ra</span><span>⇩ Tải hóa đơn XML</span><span>▣ Kết xuất Form PMKT</span><span>⚙ Cài đặt</span>
+    </div>
+    <div class="actions">
+      <button>▣ Lưu dữ liệu</button><button>▱ Mở dữ liệu</button><button>▤ Xuất Excel</button><button>⇩ Xếp hàng XML (2)</button><button>⌫ Xóa lọc</button>
+    </div>
+  </div>
+  <main class="page">
+    <div class="query">
+      <input class="date" value="07/08/2026  →  09/09/2026" readonly />
+      <input class="doctype" placeholder="Loại / mẫu số" />
+      <input class="tax" placeholder="MST đối tác" />
+      <input class="no" placeholder="Số hóa đơn" />
+      <input class="series" placeholder="Ký hiệu" />
+      <button class="primary">⌕ Tra cứu</button>
+      <button>↻ Lấy chi tiết HHDV</button>
+      <button>Lấy chi tiết HHDV tất cả</button>
+      <input class="quick" placeholder="⌕  Lọc nhanh dữ liệu đang có" />
+    </div>
+
+    <div class="summary">
+      <div class="tile"><span class="label">Đang hiển thị số hóa đơn</span><div class="count"><strong>226</strong><small>/ 226 trong dataset</small></div></div>
+      <div class="tile"><span class="label">Số hóa đơn đã có chi tiết HHDV</span><div class="count"><strong>222</strong></div></div>
+      <div class="tile"><span class="label">Tiền trước thuế</span><div class="money"><b>USD</b><b>698.080,66</b></div><div class="money"><b>VND</b><b>2.686.139.533</b></div></div>
+      <div class="tile"><span class="label">Tiền VAT</span><div class="money"><b>USD</b><b>0</b></div><div class="money"><b>VND</b><b>3.582.840</b></div></div>
+      <div class="tile total"><span class="label">Tổng thanh toán</span><div class="money"><b>USD</b><b>1.372.873,32</b></div><div class="money"><b>VND</b><b>2.868.040.009</b></div></div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title"><span>Thông tin hóa đơn</span><button>⚙ Cột hiển thị (10)</button></div>
+      <div class="viewport">
+        <table>
+          <thead><tr><th class="expand"></th><th class="select">□</th><th class="datec">Ngày</th><th class="seriesc">Ký hiệu</th><th class="noc">Số hóa đơn</th><th class="mst">MST bán</th><th class="partner">Tên đối tác</th><th class="currency">Loại tiền tệ</th><th class="subtotal num">Tiền hàng</th><th class="vat num">Tiền thuế</th><th class="grand num">Tổng thanh toán</th><th class="status">Tình trạng hóa đơn</th><th class="spacer"></th></tr></thead>
+          <tbody>
+            <tr><td class="expand">＋</td><td class="select">□</td><td class="datec">2026-08-30</td><td>C26TAT</td><td>1099</td><td>0107039063</td><td><div class="partner-name">CÔNG TY CỔ PHẦN TIẾP VẬN ATT VIỆT NAM</div></td><td class="currency">VND</td><td class="num">82.150.000</td><td class="num">0</td><td class="num">82.150.000</td><td><span class="tag">Hóa đơn mới</span></td><td class="spacer"></td></tr>
+            <tr><td class="expand">＋</td><td class="select">□</td><td class="datec">2026-08-30</td><td>C26TAT</td><td>1100</td><td>0107039063</td><td><div class="partner-name">CÔNG TY CỔ PHẦN TIẾP VẬN ATT VIỆT NAM</div></td><td class="currency">VND</td><td class="num">91.020.000</td><td class="num">0</td><td class="num">91.020.000</td><td><span class="tag">Hóa đơn mới</span></td><td class="spacer"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,16 @@
+node_modules
+dist
+release
+.package-work
+coverage
+.git
+.gitignore
+*.zip
+*.log
+*.part
+*.bak
+.env
+.env.*
+!.env.example
+HDDT_DATA
+backup

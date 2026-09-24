@@ -1,0 +1,43 @@
+HDDT v1.2.1-r12 — VM300 QUICK START
+=====================================
+
+1) WinSCP upload ZIP to:
+   /opt/hddt_conn/releases/HDDT-v1.2.1-r12/
+
+2) SSH to VM300:
+   ssh <user>@10.10.2.45
+
+3) Extract:
+   cd /opt/hddt_conn/releases/HDDT-v1.2.1-r12
+   unzip HDDT-v1.2.1-r12-docker-production-source.zip
+   cd HDDT-v1.2.1-source
+
+4) Build image / prepare persistent directories:
+   chmod +x deploy/*.sh
+   ./deploy/prepare-vm300.sh "$PWD" 1.2.1-r12
+
+5) Portainer > Stacks > Add stack > Web editor
+   Name: hddt-conn
+   Paste deploy/portainer-stack.yml
+
+   Environment variables:
+   HDDT_IMAGE_TAG=1.2.1-r12
+   HDDT_HTTP_PORT=8088
+   HDDT_BASE_DIR=/opt/hddt_conn
+   HDDT_ALLOWED_ORIGINS=http://10.10.2.45:8088
+
+6) Deploy the stack.
+
+7) Open:
+   http://10.10.2.45:8088
+
+8) Verify:
+   docker ps --filter name=hddt-conn
+   docker logs --tail 100 hddt-conn
+   curl -s http://127.0.0.1:8088/api/app/status
+
+9) Backup before update:
+   ./deploy/backup-data.sh
+
+Full guide:
+   docs/DOCKER_PORTAINER_VM300_v1.2.1-r12.md
