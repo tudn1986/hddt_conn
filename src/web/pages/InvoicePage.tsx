@@ -68,7 +68,7 @@ import type {
 } from '../../shared/models/index.js';
 import { mergeIncrementalDocuments, toExistingInvoiceRef } from '../../shared/incremental-sync/index.js';
 import { solutionProviderDisplayOf, solutionProviderFriendlyName, solutionProviderTaxCodeOf } from '../../shared/solution-provider.js';
-import { VNPT_SOLUTION_TAX_CODE } from '../../shared/provider-resolution.js';
+import { ACMAN_SOLUTION_TAX_CODE, presentationForSolutionTaxCode, PVOIL_SOLUTION_TAX_CODE, VNPT_SOLUTION_TAX_CODE } from '../../shared/provider-resolution.js';
 import {
   buildInvoiceRelationContext,
   buildRelationViewModels,
@@ -493,12 +493,18 @@ export default function InvoicePage(props: Props) {
   };
 
   const requestTvanPdfView = async (document: InvoiceDocument) => {
-    const vnptNeedsGdtXml = solutionProviderTaxCodeOf(document) === VNPT_SOLUTION_TAX_CODE
-      && !String(document.lookup?.lookupCode || '').trim();
-    if (!authenticated && (ehoadonNeedsGdtXml(document) || vnptNeedsGdtXml)) {
+    const solutionTaxCode = solutionProviderTaxCodeOf(document);
+    const vnptNeedsGdtXml = solutionTaxCode === VNPT_SOLUTION_TAX_CODE && !String(document.lookup?.lookupCode || '').trim();
+    const acmanNeedsGdtXml = solutionTaxCode === ACMAN_SOLUTION_TAX_CODE && !String(document.lookup?.lookupCode || '').trim();
+    const pvoilNeedsGdtXml = solutionTaxCode === PVOIL_SOLUTION_TAX_CODE && !String(document.lookup?.lookupCode || '').trim();
+    if (!authenticated && (ehoadonNeedsGdtXml(document) || vnptNeedsGdtXml || acmanNeedsGdtXml || pvoilNeedsGdtXml)) {
       message.warning(vnptNeedsGdtXml
         ? 'Hóa đơn VNPT chưa có Fkey trong dataset. Hãy đăng nhập GDT để backend tải XML và tìm mã tra cứu.'
-        : 'Hóa đơn MSTTCGP 0314743623 cần đăng nhập GDT để tải XML trước khi xem PDF.');
+        : acmanNeedsGdtXml
+          ? 'Hóa đơn ACMAN chưa có mã tra cứu trong dataset. Hãy đăng nhập GDT để backend tải XML và tìm mã tra cứu.'
+          : pvoilNeedsGdtXml
+            ? 'Hóa đơn PVOIL chưa có Fkey trong dataset. Hãy đăng nhập GDT để backend tải XML và tìm mã tra cứu.'
+            : 'Hóa đơn MSTTCGP 0314743623 cần đăng nhập GDT để tải XML trước khi xem PDF.');
       return;
     }
     setTvanBusyKey(document.key);
@@ -541,8 +547,12 @@ export default function InvoicePage(props: Props) {
   const startTvanPdfBatch = async () => {
     const targets = selectedDocuments;
     if (!targets.length) return message.warning('Chọn ít nhất một hóa đơn.');
-    const hasXmlDependentProvider = targets.some(document => ehoadonNeedsGdtXml(document)
-      || (solutionProviderTaxCodeOf(document) === VNPT_SOLUTION_TAX_CODE && !String(document.lookup?.lookupCode || '').trim()));
+    const hasXmlDependentProvider = targets.some(document => {
+      const solutionTaxCode = solutionProviderTaxCodeOf(document);
+      return ehoadonNeedsGdtXml(document)
+        || ((solutionTaxCode === VNPT_SOLUTION_TAX_CODE || solutionTaxCode === ACMAN_SOLUTION_TAX_CODE || solutionTaxCode === PVOIL_SOLUTION_TAX_CODE)
+          && !String(document.lookup?.lookupCode || '').trim());
+    });
     if (!authenticated && hasXmlDependentProvider) {
       return message.warning('Có hóa đơn cần XML GDT để xác định mã tra cứu PDF. Hãy đăng nhập GDT trước khi tải.');
     }
@@ -1162,7 +1172,7 @@ export default function InvoicePage(props: Props) {
       render: (_: unknown, record: InvoiceDocument) => (
         <Space size={2}>
           <Button type="link" size="small" onClick={() => setDrawerDoc(record)}>Xem</Button>
-          {(isEhoadonDientuInvoice(record) || solutionProviderTaxCodeOf(record) === VNPT_SOLUTION_TAX_CODE) && (
+          {(isEhoadonDientuInvoice(record) || Boolean(presentationForSolutionTaxCode(solutionProviderTaxCodeOf(record)))) && (
             <Button type="link" size="small" loading={tvanBusyKey === record.key} onClick={() => void requestTvanPdfView(record)}>PDF</Button>
           )}
         </Space>
