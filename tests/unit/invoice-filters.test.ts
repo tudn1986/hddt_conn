@@ -12,6 +12,7 @@ describe('invoice header filters', () => {
     invoiceStatus: 1,
     processingStatus: 0,
     providerCode: 'tvan_misa',
+    providers: { solution: { taxCode: '0101243150' }, transport: { code: 'tvan_misa' } },
     lookup: { lookupCode: 'ABC-001' },
   });
   const sales = document({
@@ -25,6 +26,7 @@ describe('invoice header filters', () => {
     invoiceStatus: 3,
     processingStatus: 5,
     providerCode: 'tvan_viettel',
+    providers: { solution: { taxCode: '0100109106' }, transport: { code: 'tvan_viettel' } },
     seller: { taxCode: 'SELLER', name: 'Người bán', dynamicFields: [] },
     buyer: { taxCode: 'BUYER', name: 'Khách mua', dynamicFields: [] },
     lookup: { lookupCode: 'XYZ-002' },
@@ -58,10 +60,11 @@ describe('invoice header filters', () => {
     expect(filterInvoices(docs, { processingStatuses: ['5'] })).toEqual([sales]);
   });
 
-  it('combines type, TVAN and Detail filters without mutation', () => {
+  it('filters solution providers by MSTTCGP and keeps legacy provider-code filters compatible', () => {
     const before = JSON.stringify(docs);
-    expect(filterInvoices(docs, { type: '01GTKT', providerCodes: ['tvan_misa'], detail: 'has' })).toEqual([purchase]);
-    expect(filterInvoices(docs, { providerCodes: ['tvan_viettel'], detail: 'missing' })).toEqual([sales]);
+    expect(filterInvoices(docs, { type: '01GTKT', providerCodes: ['0101243150'], detail: 'has' })).toEqual([purchase]);
+    expect(filterInvoices(docs, { providerCodes: ['0100109106'], detail: 'missing' })).toEqual([sales]);
+    expect(filterInvoices(docs, { providerCodes: ['tvan_misa'] })).toEqual([purchase]);
     expect(filterInvoices(docs, {})).toEqual(docs);
     expect(JSON.stringify(docs)).toBe(before);
   });

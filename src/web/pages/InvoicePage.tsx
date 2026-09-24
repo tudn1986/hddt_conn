@@ -67,6 +67,7 @@ import type {
   TvanSupervisedPrepareResult,
 } from '../../shared/models/index.js';
 import { mergeIncrementalDocuments, toExistingInvoiceRef } from '../../shared/incremental-sync/index.js';
+import { solutionProviderDisplayOf, solutionProviderFriendlyName, solutionProviderTaxCodeOf } from '../../shared/solution-provider.js';
 import {
   buildInvoiceRelationContext,
   buildRelationViewModels,
@@ -95,7 +96,7 @@ const INVOICE_COLUMN_CHOICES: Array<{ key: InvoiceColumnKey; label: string }> = 
   { key: 'grandTotal', label: 'Tổng tiền thanh toán' },
   { key: 'invoiceStatus', label: 'Tình trạng hóa đơn' },
   { key: 'processingStatus', label: 'Trạng thái xử lý' },
-  { key: 'providerCode', label: 'TVAN' },
+  { key: 'providerCode', label: 'NCC HĐĐT' },
   { key: 'detail', label: 'Detail' },
   { key: 'actions', label: 'Thao tác xem' },
 ];
@@ -695,7 +696,12 @@ export default function InvoicePage(props: Props) {
       type: unique(documents.map(typeOfInvoice)),
       invoiceStatuses,
       processingStatuses: unique(documents.map(d => d.processingStatus)),
-      providerCodes: unique(documents.map(d => d.providerCode)),
+      providerCodes: unique(documents.map(solutionProviderTaxCodeOf)).map(option => ({
+        ...option,
+        label: solutionProviderFriendlyName(option.value) === option.value
+          ? option.value
+          : `${solutionProviderFriendlyName(option.value)} · ${option.value}`,
+      })),
     };
   }, [documents]);
   const currencyTotals = useMemo(() => {
@@ -760,7 +766,7 @@ export default function InvoicePage(props: Props) {
   if (filters.providerCodes?.length) {
     activeFilterChips.push({
       key: 'providerCodes',
-      label: `TVAN: ${filters.providerCodes.join(', ')}`,
+      label: `NCC HĐĐT: ${filters.providerCodes.map(value => solutionProviderFriendlyName(value) || value).join(', ')}`,
       onClose: () => setFilters(current => ({ ...current, providerCodes: undefined })),
     });
   }
@@ -1104,12 +1110,19 @@ export default function InvoicePage(props: Props) {
     },
     {
       key: 'providerCode',
-      title: 'TVAN',
-      dataIndex: 'providerCode',
+      title: 'NCC HĐĐT',
       width: columnWidths.providerCode,
       className: 'invoice-cell-nowrap',
       ...selectHeaderFilter('providerCodes', options.providerCodes, true),
-      render: (value: unknown) => singleLineValue(value),
+      render: (_value: unknown, record: InvoiceDocument) => {
+        const provider = solutionProviderDisplayOf(record);
+        if (!provider.taxCode) return singleLineValue(undefined);
+        return (
+          <Tooltip title={`MSTTCGP: ${provider.taxCode}`} placement="topLeft">
+            <span>{provider.label}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       key: 'lookupCode',
@@ -1361,7 +1374,7 @@ export default function InvoicePage(props: Props) {
                 />
               </div>
               <div className="invoice-advanced-field">
-                <Text className="invoice-advanced-label">TVAN</Text>
+                <Text className="invoice-advanced-label">NCC HĐĐT</Text>
                 <Select
                   mode="multiple"
                   allowClear

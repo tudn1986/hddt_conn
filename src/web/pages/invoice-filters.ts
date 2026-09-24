@@ -1,4 +1,5 @@
 import type { InvoiceDocument } from '../../shared/models/index.js';
+import { solutionProviderTaxCodeOf } from '../../shared/solution-provider.js';
 
 export type DetailFilter = 'has' | 'missing';
 
@@ -49,6 +50,7 @@ export function filterInvoices(
       && (!filters.processingStatuses?.length
         || filters.processingStatuses.includes(String(document.processingStatus ?? '')))
       && (!filters.providerCodes?.length
+        || filters.providerCodes.includes(String(solutionProviderTaxCodeOf(document) ?? ''))
         || filters.providerCodes.includes(String(document.providerCode ?? '')))
       && contains(document.lookup?.lookupCode, filters.lookupCode)
       && (!filters.detail
