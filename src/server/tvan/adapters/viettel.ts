@@ -18,9 +18,10 @@ const ALLOWED_HOSTS = ['vinvoice.viettel.vn'] as const;
 const VERIFY_ENDPOINT = `${ORIGIN}/api/services/einvoiceuaa/api/captcha/verify`;
 const DOWNLOAD_ENDPOINT = `${ORIGIN}/api/services/einvoicequery/sync/utility/downloadPDF`;
 const CAPTCHA_ENDPOINTS = [
-  // GET is the only method confirmed by the live Viettel responses captured in supervised mode.
-  `${ORIGIN}/api/services/einvoiceuaa/api/captcha/get`,
+  // Current Viettel invoice-search bundle calls /captcha/generate first.
   `${ORIGIN}/api/services/einvoiceuaa/api/captcha/generate`,
+  // Keep older endpoints as compatibility fallbacks only.
+  `${ORIGIN}/api/services/einvoiceuaa/api/captcha/get`,
   `${ORIGIN}/api/services/einvoiceuaa/api/captcha`,
 ] as const;
 
@@ -33,6 +34,7 @@ type ParsedChallenge = {
   pieceImageSource?: string;
   sliderMax?: number;
   sliderStart?: number;
+  sliderY?: number;
   expiresAt?: string;
 };
 
@@ -315,8 +317,10 @@ function challengeFromPayload(payload: unknown): ParsedChallenge | undefined {
     ?? (backgroundWidth && pieceWidth && backgroundWidth > pieceWidth ? backgroundWidth - pieceWidth : undefined);
   // Never initialize the user's answer from offsetX/point.x even if a provider accidentally returns it.
   const sliderStart = firstDeepNumber(records, ['sliderStart', 'startX', 'start_x']) ?? 0;
+  // Viettel production returns offsetY so the puzzle piece can be rendered at the same vertical position as its hole.
+  const sliderY = firstDeepNumber(records, ['offsetY', 'offset_y', 'puzzleY', 'pieceY', 'yPosition', 'y_position']);
   const expiresAt = firstDeepString(records, ['expiresAt', 'expiredAt', 'expires_at', 'expired_at']);
-  return { token, imageSource, pieceImageSource, kind: slider ? 'slider' : 'text', sliderMax, sliderStart, expiresAt };
+  return { token, imageSource, pieceImageSource, kind: slider ? 'slider' : 'text', sliderMax, sliderStart, sliderY, expiresAt };
 }
 
 function tokenTtl(payload: unknown): number {
@@ -505,6 +509,7 @@ async function probeViettelCaptcha(context: TvanAdapterContext): Promise<TvanCap
       pieceImageMimeType: piece?.mimeType,
       sliderMax: parsed?.sliderMax,
       sliderStart: parsed?.sliderStart ?? 0,
+      sliderY: parsed?.sliderY,
       expiresAt: parsed?.expiresAt,
     };
     return {

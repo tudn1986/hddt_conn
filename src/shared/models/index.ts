@@ -111,6 +111,8 @@ export interface TvanCaptchaChallenge {
   pieceImageMimeType?: string;
   sliderMax?: number;
   sliderStart?: number;
+  /** Provider-supplied vertical placement for a slider puzzle piece, in source-image pixels. */
+  sliderY?: number;
   expiresAt?: string;
 }
 

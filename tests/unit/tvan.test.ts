@@ -584,20 +584,14 @@ describe('TVAN registry and adapters', () => {
       const method = init?.method || 'GET';
       calls.push({ url, method, body: typeof init?.body === 'string' ? init.body : undefined });
       const pathname = new URL(url).pathname;
-      if (pathname.endsWith('/captcha/get')) {
-        return new Response(JSON.stringify({ success: true, token: 'token-only' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json', 'set-cookie': 'VTSESSION=abc123; Path=/; HttpOnly' },
-        });
-      }
       if (pathname.endsWith('/captcha/generate')) {
         return new Response(JSON.stringify({
-          success: true,
-          payload: {
-            captchaToken: 'private-captcha-id',
-            strangeBackgroundBlob: png,
-            strangeJigsawBlob: piecePng,
-          },
+          backgroundUrl: png,
+          puzzleUrl: piecePng,
+          token: 'private-captcha-id',
+          offsetY: 72,
+          offsetX: null,
+          slideCaptchaOffsetMargin: null,
         }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
@@ -627,12 +621,16 @@ describe('TVAN registry and adapters', () => {
     expect(challenge.challenge).not.toHaveProperty('token');
     expect(challenge.challenge.providerCode).toBe('tvan_viettel');
     expect(challenge.challenge.imageBase64).toBe(png);
+    expect(challenge.challenge.pieceImageBase64).toBe(piecePng);
+    expect(challenge.challenge.sliderY).toBe(72);
     expect(challenge.trace).toMatchObject({
       endpoint: 'https://vinvoice.viettel.vn/api/services/einvoiceuaa/api/captcha/generate',
       method: 'GET',
       responseStatus: 200,
     });
-    expect(calls.filter((call) => call.url.includes('/captcha/') && !call.url.includes('/verify')).every((call) => call.method === 'GET')).toBe(true);
+    const challengeCalls = calls.filter((call) => call.url.includes('/captcha/') && !call.url.includes('/verify'));
+    expect(challengeCalls.every((call) => call.method === 'GET')).toBe(true);
+    expect(new URL(challengeCalls[0].url).pathname).toContain('/captcha/generate');
 
     const verification = await adapter.verifyCaptcha!(viettelDocument(), challenge.challenge, challenge.privateState, '80', session.ctx);
     expect(session.getToken()?.token).toBe('verified-session-token');

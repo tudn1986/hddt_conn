@@ -270,6 +270,7 @@ export default function InvoicePage(props: Props) {
   const [captchaSliderValue, setCaptchaSliderValue] = useState(0);
   const [captchaSliderTouched, setCaptchaSliderTouched] = useState(false);
   const [captchaBackgroundWidth, setCaptchaBackgroundWidth] = useState(0);
+  const [captchaBackgroundHeight, setCaptchaBackgroundHeight] = useState(0);
   const [captchaPieceWidth, setCaptchaPieceWidth] = useState(0);
   const [pdfViewer, setPdfViewer] = useState<{ url: string; title: string } | null>(null);
 
@@ -288,6 +289,7 @@ export default function InvoicePage(props: Props) {
       setCaptchaSliderValue(captchaFlow.challenge.sliderStart ?? 0);
       setCaptchaSliderTouched(false);
       setCaptchaBackgroundWidth(0);
+      setCaptchaBackgroundHeight(0);
       setCaptchaPieceWidth(0);
     }
   }, [captchaFlow?.challenge.id]);
@@ -509,6 +511,29 @@ export default function InvoicePage(props: Props) {
             : 'Hóa đơn MSTTCGP 0314743623 cần đăng nhập GDT để tải XML trước khi xem PDF.');
       return;
     }
+
+    // MISA's supervised card is the stable production path: resolve customData and let the
+    // real browser open DownloadHandler. Server-side byte fetching is intermittently rejected
+    // by MISA's edge/WAF even when the presentation URL itself is valid.
+    const providerCode = String(document.providerCode || document.lookup?.providerCode || '').trim().toLocaleLowerCase();
+    if (providerCode.includes('misa')) {
+      const popup = window.open('about:blank', '_blank');
+      if (popup) popup.opener = null;
+      setTvanBusyKey(document.key);
+      try {
+        const resolved = await api.resolveTvanPresentationLink(document);
+        if (!resolved.downloadUrl) throw new Error('MISA chưa trả link bản thể hiện PDF.');
+        if (popup) popup.location.replace(resolved.downloadUrl);
+        else window.open(resolved.downloadUrl, '_blank', 'noopener,noreferrer');
+      } catch (error) {
+        popup?.close();
+        message.error(error instanceof Error ? error.message : 'Không tạo được link bản thể hiện MISA.');
+      } finally {
+        setTvanBusyKey(null);
+      }
+      return;
+    }
+
     setTvanBusyKey(document.key);
     try {
       const prepared = await api.prepareTvanPdfView(document);
@@ -1509,9 +1534,23 @@ export default function InvoicePage(props: Props) {
                       src={`data:${captchaFlow.challenge.imageMimeType || 'image/png'};base64,${captchaFlow.challenge.imageBase64}`}
                       alt="Ảnh nền CAPTCHA Viettel"
                       className="tvan-slider-captcha-background"
-                      onLoad={(event) => setCaptchaBackgroundWidth(event.currentTarget.naturalWidth || 0)}
+                      onLoad={(event) => {
+                        setCaptchaBackgroundWidth(event.currentTarget.naturalWidth || 0);
+                        setCaptchaBackgroundHeight(event.currentTarget.naturalHeight || 0);
+                      }}
                     />
-                    {captchaSliderTouched && captchaBackgroundWidth > 0 && (
+                    {captchaFlow.challenge.pieceImageBase64 && captchaBackgroundWidth > 0 && captchaBackgroundHeight > 0 && captchaFlow.challenge.sliderY !== undefined ? (
+                      <img
+                        src={`data:${captchaFlow.challenge.pieceImageMimeType || 'image/png'};base64,${captchaFlow.challenge.pieceImageBase64}`}
+                        alt="Vị trí mảnh ghép CAPTCHA Viettel"
+                        className="tvan-slider-captcha-piece-overlay"
+                        style={{
+                          left: `${Math.min(100, Math.max(0, (captchaSliderValue / captchaBackgroundWidth) * 100))}%`,
+                          top: `${Math.min(100, Math.max(0, (captchaFlow.challenge.sliderY / captchaBackgroundHeight) * 100))}%`,
+                          width: `${Math.min(100, Math.max(1, ((captchaPieceWidth || 50) / captchaBackgroundWidth) * 100))}%`,
+                        }}
+                      />
+                    ) : captchaSliderTouched && captchaBackgroundWidth > 0 ? (
                       <span
                         className="tvan-slider-captcha-position"
                         aria-hidden="true"
@@ -1520,7 +1559,7 @@ export default function InvoicePage(props: Props) {
                           width: `${Math.min(28, Math.max(4, ((captchaPieceWidth || 42) / captchaBackgroundWidth) * 100))}%`,
                         }}
                       />
-                    )}
+                    ) : null}
                   </div>
                 ) : (
                   <Alert type="error" showIcon message="Không có ảnh CAPTCHA; vui lòng tải lại challenge." />
@@ -1534,7 +1573,7 @@ export default function InvoicePage(props: Props) {
                       className="tvan-slider-captcha-piece"
                       onLoad={(event) => setCaptchaPieceWidth(event.currentTarget.naturalWidth || 0)}
                     />
-                    <Text type="secondary">Dải trên ảnh sẽ di chuyển theo thanh trượt để căn vị trí X.</Text>
+                    <Text type="secondary">Mảnh ghép được đặt đúng trục Y do Viettel cung cấp và sẽ di chuyển theo thanh trượt trên trục X.</Text>
                   </div>
                 )}
                 <Slider
@@ -2108,6 +2147,7 @@ function ViettelPresentationCard({ document }: { document: InvoiceDocument }) {
   const [sliderValue, setSliderValue] = useState(0);
   const [sliderTouched, setSliderTouched] = useState(false);
   const [backgroundWidth, setBackgroundWidth] = useState(0);
+  const [backgroundHeight, setBackgroundHeight] = useState(0);
   const [pieceWidth, setPieceWidth] = useState(0);
   const [pdfResult, setPdfResult] = useState<{ size: number; type: string; openedAt: string; objectUrl?: string } | null>(null);
 
@@ -2121,6 +2161,7 @@ function ViettelPresentationCard({ document }: { document: InvoiceDocument }) {
     setSliderValue(0);
     setSliderTouched(false);
     setBackgroundWidth(0);
+    setBackgroundHeight(0);
     setPieceWidth(0);
     setPdfResult((current) => {
       if (current?.objectUrl) URL.revokeObjectURL(current.objectUrl);
@@ -2157,6 +2198,7 @@ function ViettelPresentationCard({ document }: { document: InvoiceDocument }) {
       setSliderValue(response.challenge?.sliderStart ?? 0);
       setSliderTouched(false);
       setBackgroundWidth(0);
+      setBackgroundHeight(0);
       setPieceWidth(0);
     } catch (requestError) {
       setPrepare(null);
@@ -2362,9 +2404,23 @@ function ViettelPresentationCard({ document }: { document: InvoiceDocument }) {
                         src={`data:${challenge.imageMimeType || 'image/png'};base64,${challenge.imageBase64}`}
                         alt="Ảnh nền CAPTCHA Viettel"
                         className="tvan-slider-captcha-background"
-                        onLoad={(event) => setBackgroundWidth(event.currentTarget.naturalWidth || 0)}
+                        onLoad={(event) => {
+                          setBackgroundWidth(event.currentTarget.naturalWidth || 0);
+                          setBackgroundHeight(event.currentTarget.naturalHeight || 0);
+                        }}
                       />
-                      {sliderTouched && backgroundWidth > 0 && (
+                      {challenge.pieceImageBase64 && backgroundWidth > 0 && backgroundHeight > 0 && challenge.sliderY !== undefined ? (
+                        <img
+                          src={`data:${challenge.pieceImageMimeType || 'image/png'};base64,${challenge.pieceImageBase64}`}
+                          alt="Vị trí mảnh ghép CAPTCHA Viettel"
+                          className="tvan-slider-captcha-piece-overlay"
+                          style={{
+                            left: `${Math.min(100, Math.max(0, (sliderValue / backgroundWidth) * 100))}%`,
+                            top: `${Math.min(100, Math.max(0, (challenge.sliderY / backgroundHeight) * 100))}%`,
+                            width: `${Math.min(100, Math.max(1, ((pieceWidth || 50) / backgroundWidth) * 100))}%`,
+                          }}
+                        />
+                      ) : sliderTouched && backgroundWidth > 0 ? (
                         <span
                           className="tvan-slider-captcha-position"
                           aria-hidden="true"
@@ -2373,7 +2429,7 @@ function ViettelPresentationCard({ document }: { document: InvoiceDocument }) {
                             width: `${Math.min(28, Math.max(4, ((pieceWidth || 42) / backgroundWidth) * 100))}%`,
                           }}
                         />
-                      )}
+                      ) : null}
                     </div>
                   ) : <Alert type="error" showIcon message="Challenge không có ảnh CAPTCHA." />}
                   {challenge.pieceImageBase64 && (
