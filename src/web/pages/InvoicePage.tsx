@@ -2602,7 +2602,7 @@ function InvoiceDrawer({ document, authenticated, onClose }: { document: any | n
           <Descriptions.Item label="Chiết khấu">{money(document.discountAmount)}</Descriptions.Item>
           <Descriptions.Item label="Tổng tiền">{money(document.grandTotal)}</Descriptions.Item>
         </Descriptions></> },
-        { key: 'provider-research', label: 'Tra cứu & NCC HĐĐT', children: <InvoiceProviderResearchPanel document={document as InvoiceDocument} authenticated={authenticated} /> },
+        { key: 'provider-research', label: 'Xem bản thể hiện', children: <InvoiceProviderResearchPanel document={document as InvoiceDocument} authenticated={authenticated} /> },
         { key: 'dynamic', label: `Trường mở rộng (${dynamicFields.length})`, children: <Table size="small" rowKey={(_, index) => String(index)} pagination={{ pageSize: 50 }} dataSource={dynamicFields} columns={[
           { title: 'Section', dataIndex: 'section', width: 130 },
           { title: 'Tên', dataIndex: 'name', width: 220 },
