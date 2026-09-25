@@ -1,4 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../src/server/app.js';
 
@@ -38,10 +41,27 @@ async function login(app: FastifyInstance, browser: BrowserState, username: stri
 
 describe('public browser session isolation', () => {
   let app: FastifyInstance | undefined;
-  afterEach(async () => app?.close());
+  let root = '';
+
+  beforeEach(async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'hddt-public-session-'));
+  });
+
+  afterEach(async () => {
+    await app?.close();
+    app = undefined;
+    if (root) await fs.rm(root, { recursive: true, force: true });
+  });
+
+  const buildIsolatedApp = () => buildApp({
+    connectorMode: 'mock',
+    logger: false,
+    appDataDir: path.join(root, 'app'),
+    defaultDataRoot: path.join(root, 'data'),
+  });
 
   it('isolates cookies, CSRF and logout between two browsers', async () => {
-    const built = await buildApp({ connectorMode: 'mock', logger: false });
+    const built = await buildIsolatedApp();
     app = built.app;
     const a = await bootstrap(app);
     const b = await bootstrap(app);
@@ -71,7 +91,7 @@ describe('public browser session isolation', () => {
     const previous = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     try {
-      const built = await buildApp({ connectorMode: 'mock', logger: false });
+      const built = await buildIsolatedApp();
       app = built.app;
       const response = await app.inject({ method: 'GET', url: '/api/app/status' });
       const cookie = String(response.headers['set-cookie']);

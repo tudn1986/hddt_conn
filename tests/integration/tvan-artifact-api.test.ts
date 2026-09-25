@@ -1,4 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../src/server/app.js';
 import { document } from '../helpers.js';
@@ -16,10 +19,27 @@ async function browser(app: FastifyInstance) {
 
 describe('TVAN artifact public API', () => {
   let app: FastifyInstance | undefined;
-  afterEach(async () => app?.close());
+  let root = '';
+
+  beforeEach(async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'hddt-tvan-api-'));
+  });
+
+  afterEach(async () => {
+    await app?.close();
+    app = undefined;
+    if (root) await fs.rm(root, { recursive: true, force: true });
+  });
+
+  const buildIsolatedApp = () => buildApp({
+    connectorMode: 'mock',
+    logger: false,
+    appDataDir: path.join(root, 'app'),
+    defaultDataRoot: path.join(root, 'data'),
+  });
 
   it('streams session-scoped original/PDF artifacts with safe download headers', async () => {
-    const built = await buildApp({ connectorMode: 'mock', logger: false });
+    const built = await buildIsolatedApp();
     app = built.app;
     const owner = await browser(app);
     const other = await browser(app);
@@ -68,7 +88,7 @@ describe('TVAN artifact public API', () => {
   });
 
   it('exposes provider-generic SoftDream artifact status/prepare/download routes with CSRF', async () => {
-    const built = await buildApp({ connectorMode: 'mock', logger: false });
+    const built = await buildIsolatedApp();
     app = built.app;
     const owner = await browser(app);
     const context = app.sessions.resolve(owner.sessionId);
@@ -142,7 +162,7 @@ describe('TVAN artifact public API', () => {
   });
 
   it('returns safe manual-retry metadata for a preserved SoftDream prepare timeout', async () => {
-    const built = await buildApp({ connectorMode: 'mock', logger: false });
+    const built = await buildIsolatedApp();
     app = built.app;
     const owner = await browser(app);
     const context = app.sessions.resolve(owner.sessionId);
@@ -183,7 +203,7 @@ describe('TVAN artifact public API', () => {
   });
 
   it('streams the direct original-file route with CSRF and safe attachment headers', async () => {
-    const built = await buildApp({ connectorMode: 'mock', logger: false });
+    const built = await buildIsolatedApp();
     app = built.app;
     const owner = await browser(app);
     const context = app.sessions.resolve(owner.sessionId);
@@ -217,7 +237,7 @@ describe('TVAN artifact public API', () => {
   });
 
   it('exposes the stable presentation facade without changing provider implementation', async () => {
-    const built = await buildApp({ connectorMode: 'mock', logger: false });
+    const built = await buildIsolatedApp();
     app = built.app;
     const owner = await browser(app);
     const context = app.sessions.resolve(owner.sessionId);
