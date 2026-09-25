@@ -70,7 +70,7 @@ import type {
 } from '../../shared/models/index.js';
 import { mergeIncrementalDocuments, toExistingInvoiceRef } from '../../shared/incremental-sync/index.js';
 import { solutionProviderDisplayOf, solutionProviderFriendlyName, solutionProviderTaxCodeOf } from '../../shared/solution-provider.js';
-import { ACMAN_SOLUTION_TAX_CODE, presentationForSolutionTaxCode, PVOIL_SOLUTION_TAX_CODE, VNPT_SOLUTION_TAX_CODE } from '../../shared/provider-resolution.js';
+import { ACMAN_SOLUTION_TAX_CODE, PVOIL_SOLUTION_TAX_CODE, VNPT_SOLUTION_TAX_CODE } from '../../shared/provider-resolution.js';
 import {
   buildInvoiceRelationContext,
   buildRelationViewModels,
@@ -78,8 +78,7 @@ import {
 import { InvoiceRelationTrigger } from '../components/invoices/InvoiceRelationPopover.js';
 import { InvoiceSummaryBar, normalizeCurrencyCode } from '../components/invoices/InvoiceSummaryBar.js';
 import { InvoiceLinesModal } from '../components/invoices/InvoiceLinesModal.js';
-import TvanArtifactCard from '../components/TvanArtifactCard.js';
-import EhoadonDientuPresentationCard, { ehoadonNeedsGdtXml, isEhoadonDientuInvoice } from '../components/EhoadonDientuPresentationCard.js';
+import { ehoadonNeedsGdtXml } from '../components/EhoadonDientuPresentationCard.js';
 import InvoiceProviderResearchPanel from '../components/InvoiceProviderResearchPanel.js';
 import RawInvoiceJsonPanel from '../components/RawInvoiceJsonPanel.js';
 
@@ -196,6 +195,39 @@ const INVOICE_STATUS_META: Record<string, { label: string; color: string; icon: 
 function invoiceStatusLabel(value: unknown): string {
   const code = String(value ?? '').trim();
   return INVOICE_STATUS_META[code]?.label || (code ? `Không rõ (${code})` : '—');
+}
+
+const PUBLIC_PDF_PROVIDER_CODES = new Set([
+  'tvan_misa',
+  'tvan_viettel',
+  'tvan_softdreams',
+  'tvan_pvoil',
+  'tvan_invoice',
+  'ehoadondientu',
+]);
+
+const PUBLIC_PDF_PROVIDER_NAMES = new Set([
+  'MISA',
+  'VIETTEL',
+  'SOFTDREAMS',
+  'PVOIL',
+  'M-INVOICE',
+  'EHOADONDIENTU',
+]);
+
+function canPublicViewPdf(document: InvoiceDocument): boolean {
+  const providerCode = String(
+    document.providers?.presentation?.adapterCode
+      || document.providerCode
+      || document.lookup?.providerCode
+      || '',
+  ).trim().toLocaleLowerCase('vi-VN');
+  if (PUBLIC_PDF_PROVIDER_CODES.has(providerCode)) return true;
+
+  const providerName = String(
+    solutionProviderFriendlyName(solutionProviderTaxCodeOf(document)) || '',
+  ).trim().toLocaleUpperCase('vi-VN');
+  return PUBLIC_PDF_PROVIDER_NAMES.has(providerName);
 }
 
 function renderInvoiceStatus(value: unknown) {
@@ -492,7 +524,7 @@ export default function InvoicePage(props: Props) {
           return;
         }
       }
-      message.error(error?.message || 'Không xem được PDF bản thể hiện.');
+      message.error('Không thể mở bản thể hiện PDF. Vui lòng thử lại.');
     } finally {
       setTvanBusyKey(null);
     }
@@ -504,13 +536,7 @@ export default function InvoicePage(props: Props) {
     const acmanNeedsGdtXml = solutionTaxCode === ACMAN_SOLUTION_TAX_CODE && !String(document.lookup?.lookupCode || '').trim();
     const pvoilNeedsGdtXml = solutionTaxCode === PVOIL_SOLUTION_TAX_CODE && !String(document.lookup?.lookupCode || '').trim();
     if (!authenticated && (ehoadonNeedsGdtXml(document) || vnptNeedsGdtXml || acmanNeedsGdtXml || pvoilNeedsGdtXml)) {
-      message.warning(vnptNeedsGdtXml
-        ? 'Hóa đơn VNPT chưa có Fkey trong dataset. Hãy đăng nhập GDT để backend tải XML và tìm mã tra cứu.'
-        : acmanNeedsGdtXml
-          ? 'Hóa đơn ACMAN chưa có mã tra cứu trong dataset. Hãy đăng nhập GDT để backend tải XML và tìm mã tra cứu.'
-          : pvoilNeedsGdtXml
-            ? 'Hóa đơn PVOIL chưa có Fkey trong dataset. Hãy đăng nhập GDT để backend tải XML và tìm mã tra cứu.'
-            : 'Hóa đơn MSTTCGP 0314743623 cần đăng nhập GDT để tải XML trước khi xem PDF.');
+      message.warning('Cần đăng nhập để chuẩn bị bản thể hiện PDF của hóa đơn này.');
       return;
     }
 
@@ -524,12 +550,12 @@ export default function InvoicePage(props: Props) {
       setTvanBusyKey(document.key);
       try {
         const resolved = await api.resolvePresentationLink(document);
-        if (!resolved.downloadUrl) throw new Error('MISA chưa trả link bản thể hiện PDF.');
+        if (!resolved.downloadUrl) throw new Error('Chưa thể mở bản thể hiện PDF.');
         if (popup) popup.location.replace(resolved.downloadUrl);
         else window.open(resolved.downloadUrl, '_blank', 'noopener,noreferrer');
       } catch (error) {
         popup?.close();
-        message.error(error instanceof Error ? error.message : 'Không tạo được link bản thể hiện MISA.');
+        message.error('Không thể mở bản thể hiện PDF. Vui lòng thử lại.');
       } finally {
         setTvanBusyKey(null);
       }
@@ -540,7 +566,7 @@ export default function InvoicePage(props: Props) {
     try {
       const prepared = await api.preparePresentation(document);
       if (!prepared.capability.supported) {
-        message.warning(prepared.capability.reason || `TVAN ${prepared.capability.providerCode} chưa hỗ trợ PDF.`);
+        message.warning('Chưa thể xem/tải PDF bản thể hiện của hóa đơn này.');
         return;
       }
       if (prepared.challenge) {
@@ -550,7 +576,7 @@ export default function InvoicePage(props: Props) {
       }
       await fetchAndOpenTvanPdf(document);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Không chuẩn bị được bản thể hiện PDF.');
+      message.error('Không thể mở bản thể hiện PDF. Vui lòng thử lại.');
     } finally {
       setTvanBusyKey(null);
     }
@@ -568,8 +594,8 @@ export default function InvoicePage(props: Props) {
       downloadBlob(blob, `HDDT_PDF_${state.id}.zip`);
       const done = state.tasks.filter((task) => task.status === 'done').length;
       const failed = state.tasks.filter((task) => task.status === 'failed').length;
-      if (failed) message.warning(`Đã tải ${done} PDF; ${failed} hóa đơn chưa tải được. Chi tiết có trong manifest.json.`);
-      else message.success(`Đã tải đủ ${done} PDF theo thứ tự ưu tiên P1 → P2 → P3.`);
+      if (failed) message.warning(`Đã tải ${done} PDF; ${failed} hóa đơn chưa tải được.`);
+      else message.success(`Đã tải ${done} PDF.`);
     }
   };
 
@@ -583,13 +609,13 @@ export default function InvoicePage(props: Props) {
           && !String(document.lookup?.lookupCode || '').trim());
     });
     if (!authenticated && hasXmlDependentProvider) {
-      return message.warning('Có hóa đơn cần XML GDT để xác định mã tra cứu PDF. Hãy đăng nhập GDT trước khi tải.');
+      return message.warning('Cần đăng nhập để tải PDF cho các hóa đơn đã chọn.');
     }
     setTvanBatchBusy(true);
     try {
       await finishTvanBatch(await api.startTvanPdfBatch(targets));
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'Không khởi tạo được tải PDF hàng loạt.');
+      message.error('Không thể tải PDF. Vui lòng thử lại.');
     } finally {
       setTvanBatchBusy(false);
     }
@@ -618,7 +644,7 @@ export default function InvoicePage(props: Props) {
         await finishTvanBatch(state);
       }
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'CAPTCHA không hợp lệ hoặc đã hết hạn.');
+      message.error('CAPTCHA chưa đúng hoặc đã hết hạn. Vui lòng thử lại.');
     } finally {
       setTvanBatchBusy(false);
     }
@@ -1075,8 +1101,7 @@ export default function InvoicePage(props: Props) {
       render: (value: unknown, record: InvoiceDocument) => {
         const text = String(value ?? '').trim();
         const relationModel = relationModels.get(record.key);
-        const canViewPdf = isEhoadonDientuInvoice(record)
-          || Boolean(presentationForSolutionTaxCode(solutionProviderTaxCodeOf(record)));
+        const canViewPdf = canPublicViewPdf(record);
         return (
           <InvoiceRelationTrigger
             document={record}
@@ -1085,7 +1110,7 @@ export default function InvoicePage(props: Props) {
             className="invoice-relation-number-trigger"
           >
             <span
-              className={`invoice-single-line-cell invoice-pdf-double-click ${canViewPdf ? 'invoice-number-pdf-available' : 'invoice-number-pdf-unavailable'}${tvanBusyKey === record.key ? ' is-loading' : ''}`}
+              className={`invoice-single-line-cell ${canViewPdf ? 'invoice-pdf-double-click invoice-number-pdf-available' : 'invoice-number-pdf-unavailable'}${tvanBusyKey === record.key ? ' is-loading' : ''}`}
               title={text
                 ? canViewPdf
                   ? `${text} · Có thể xem/tải PDF bản thể hiện · Nhấp đúp để xem`
@@ -1094,7 +1119,7 @@ export default function InvoicePage(props: Props) {
               onDoubleClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
-                void requestTvanPdfView(record);
+                if (canViewPdf) void requestTvanPdfView(record);
               }}
             >
               {text || '—'}
@@ -1244,7 +1269,7 @@ export default function InvoicePage(props: Props) {
       render: (_: unknown, record: InvoiceDocument) => (
         <Space size={2}>
           <Button type="link" size="small" onClick={() => setDrawerDoc(record)}>Xem</Button>
-          {(isEhoadonDientuInvoice(record) || Boolean(presentationForSolutionTaxCode(solutionProviderTaxCodeOf(record)))) && (
+          {canPublicViewPdf(record) && (
             <Button type="link" size="small" loading={tvanBusyKey === record.key} onClick={() => void requestTvanPdfView(record)}>PDF</Button>
           )}
         </Space>
@@ -1554,7 +1579,7 @@ export default function InvoicePage(props: Props) {
       </Modal>
 
       <Modal
-        title={captchaFlow?.kind === 'batch' ? 'Xác thực TVAN để tiếp tục tải PDF' : 'Xác thực TVAN để xem PDF'}
+        title={captchaFlow?.kind === 'batch' ? 'Xác thực để tiếp tục tải PDF' : 'Xác thực để xem PDF'}
         open={Boolean(captchaFlow)}
         onCancel={() => { setCaptchaFlow(null); setCaptchaAnswer(''); setCaptchaSliderTouched(false); }}
         onOk={() => void submitCurrentCaptcha()}
@@ -1565,19 +1590,14 @@ export default function InvoicePage(props: Props) {
       >
         {captchaFlow && (
           <Space direction="vertical" size={12} style={{ width: '100%' }}>
-            <Alert
-              type="info"
-              showIcon
-              message={`${captchaFlow.challenge.providerCode} · ${captchaFlow.challenge.kind === 'slider' ? 'CAPTCHA vị trí' : 'CAPTCHA'}`}
-              description={captchaFlow.challenge.prompt}
-            />
+            <Text>Hoàn tất CAPTCHA để tiếp tục.</Text>
             {captchaFlow.challenge.kind === 'slider' ? (
               <div className="tvan-slider-captcha">
                 {captchaFlow.challenge.imageBase64 ? (
                   <div className="tvan-slider-captcha-stage">
                     <img
                       src={`data:${captchaFlow.challenge.imageMimeType || 'image/png'};base64,${captchaFlow.challenge.imageBase64}`}
-                      alt="Ảnh nền CAPTCHA Viettel"
+                      alt="Ảnh CAPTCHA"
                       className="tvan-slider-captcha-background"
                       onLoad={(event) => {
                         setCaptchaBackgroundWidth(event.currentTarget.naturalWidth || 0);
@@ -1587,8 +1607,9 @@ export default function InvoicePage(props: Props) {
                     {captchaFlow.challenge.pieceImageBase64 && captchaBackgroundWidth > 0 && captchaBackgroundHeight > 0 && captchaFlow.challenge.sliderY !== undefined ? (
                       <img
                         src={`data:${captchaFlow.challenge.pieceImageMimeType || 'image/png'};base64,${captchaFlow.challenge.pieceImageBase64}`}
-                        alt="Vị trí mảnh ghép CAPTCHA Viettel"
+                        alt="Mảnh ghép CAPTCHA"
                         className="tvan-slider-captcha-piece-overlay"
+                        onLoad={(event) => setCaptchaPieceWidth(event.currentTarget.naturalWidth || 0)}
                         style={{
                           left: `${Math.min(100, Math.max(0, (captchaSliderValue / captchaBackgroundWidth) * 100))}%`,
                           top: `${Math.min(100, Math.max(0, (captchaFlow.challenge.sliderY / captchaBackgroundHeight) * 100))}%`,
@@ -1607,20 +1628,9 @@ export default function InvoicePage(props: Props) {
                     ) : null}
                   </div>
                 ) : (
-                  <Alert type="error" showIcon message="Không có ảnh CAPTCHA; vui lòng tải lại challenge." />
+                  <Alert type="error" showIcon message="Không tải được CAPTCHA. Hãy hủy và thử lại." />
                 )}
-                {captchaFlow.challenge.pieceImageBase64 && (
-                  <div className="tvan-slider-captcha-piece-row">
-                    <Text type="secondary">Mảnh ghép:</Text>
-                    <img
-                      src={`data:${captchaFlow.challenge.pieceImageMimeType || 'image/png'};base64,${captchaFlow.challenge.pieceImageBase64}`}
-                      alt="Mảnh ghép CAPTCHA Viettel"
-                      className="tvan-slider-captcha-piece"
-                      onLoad={(event) => setCaptchaPieceWidth(event.currentTarget.naturalWidth || 0)}
-                    />
-                    <Text type="secondary">Mảnh ghép được đặt đúng trục Y do Viettel cung cấp và sẽ di chuyển theo thanh trượt trên trục X.</Text>
-                  </div>
-                )}
+
                 <Slider
                   min={0}
                   max={Math.max(1, captchaFlow.challenge.sliderMax ?? (captchaBackgroundWidth > 0 ? Math.max(1, captchaBackgroundWidth - captchaPieceWidth) : 280))}
@@ -1628,14 +1638,14 @@ export default function InvoicePage(props: Props) {
                   tooltip={{ open: false }}
                   onChange={(value) => { setCaptchaSliderValue(value); setCaptchaSliderTouched(true); }}
                 />
-                <Text type="secondary">Kéo thanh trượt để khớp mảnh ghép; ứng dụng sẽ tự gửi vị trí cho Viettel.</Text>
+                <Text type="secondary">Kéo thanh trượt để khớp mảnh ghép.</Text>
               </div>
             ) : (
               <>
                 {captchaFlow.challenge.imageBase64 && (
                   <img
                     src={`data:${captchaFlow.challenge.imageMimeType || 'image/png'};base64,${captchaFlow.challenge.imageBase64}`}
-                    alt="TVAN CAPTCHA"
+                    alt="CAPTCHA"
                     style={{ maxWidth: '100%', maxHeight: 260, objectFit: 'contain', border: '1px solid #d9d9d9', borderRadius: 6 }}
                   />
                 )}
@@ -1650,7 +1660,7 @@ export default function InvoicePage(props: Props) {
             )}
             {captchaFlow.kind === 'batch' && tvanBatchState && (
               <Text type="secondary">
-                Tiến độ: {tvanBatchState.tasks.filter((task) => task.status === 'done').length}/{tvanBatchState.tasks.length} PDF hoàn tất.
+                Đã tải {tvanBatchState.tasks.filter((task) => task.status === 'done').length}/{tvanBatchState.tasks.length} PDF.
               </Text>
             )}
           </Space>
@@ -2578,11 +2588,6 @@ function InvoiceDrawer({ document, authenticated, onClose }: { document: any | n
             <Descriptions.Item label="Trạng thái xử lý">{String(document.processingStatus ?? '—')}</Descriptions.Item>
             <Descriptions.Item label="Tổng thanh toán">{money(document.grandTotal)}</Descriptions.Item>
           </Descriptions>
-          <MisaPresentationCard document={document as InvoiceDocument} />
-          <InvoiceTvanPresentationCard document={document as InvoiceDocument} />
-          <ViettelPresentationCard document={document as InvoiceDocument} />
-          <EhoadonDientuPresentationCard document={document as InvoiceDocument} authenticated={authenticated} />
-          <TvanArtifactCard document={document as InvoiceDocument} />
         </> },
         { key: 'seller', label: 'Người bán', children: partyDescription(document.seller) },
         { key: 'buyer', label: 'Người mua', children: partyDescription(document.buyer) },
