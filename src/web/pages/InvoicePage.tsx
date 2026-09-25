@@ -1,7 +1,9 @@
 import { filterInvoices, typeOfInvoice, type InvoiceFilters } from './invoice-filters';
 import {
   computeInvoiceTableMetrics,
+  estimateInvoiceColumnContentWidth,
   type InvoiceColumnKey,
+  type InvoiceTableContentWidthHints,
 } from './invoice-table-layout';
 import {
   ALL_INVOICE_COLUMN_KEYS,
@@ -932,7 +934,44 @@ export default function InvoicePage(props: Props) {
   };
 
   const publicVisibleColumnKeys = visibleColumnKeys.filter(key => !PUBLIC_HIDDEN_INVOICE_COLUMNS.has(key));
-  const tableMetrics = computeInvoiceTableMetrics(publicVisibleColumnKeys, tableViewportWidth);
+  const tableContentWidthHints = useMemo<InvoiceTableContentWidthHints>(() => {
+    const values = (select: (document: InvoiceDocument) => unknown) => filteredDocuments.map(select);
+    return {
+      invoiceSource: estimateInvoiceColumnContentWidth(
+        values(document => document.invoiceSource === 'pos' ? 'Máy tính tiền' : 'HĐĐT'),
+        'Nguồn',
+        { headerControls: false },
+      ),
+      documentType: estimateInvoiceColumnContentWidth(
+        values(document => shortInvoiceTypeLabel(document.documentTypeName, document.documentTypeCode)),
+        'Loại HĐ',
+      ),
+      templateNo: estimateInvoiceColumnContentWidth(values(document => document.templateNo), 'Mẫu số'),
+      series: estimateInvoiceColumnContentWidth(values(document => document.series), 'Ký hiệu'),
+      invoiceNo: estimateInvoiceColumnContentWidth(values(document => document.invoiceNo), 'Số hóa đơn'),
+      partnerTaxCode: estimateInvoiceColumnContentWidth(
+        values(document => direction === 'purchase' ? document.seller?.taxCode : document.buyer?.taxCode),
+        direction === 'purchase' ? 'MST bán' : 'MST mua',
+      ),
+      partner: estimateInvoiceColumnContentWidth(
+        values(document => direction === 'purchase' ? document.seller?.name : document.buyer?.name),
+        'Tên đối tác',
+      ),
+      currency: estimateInvoiceColumnContentWidth(values(document => document.currency), 'Loại tiền tệ', { headerControls: false }),
+      subtotal: estimateInvoiceColumnContentWidth(values(document => formatAmount(document.subtotal, document.currency)), 'Tiền HHDV', { headerControls: false }),
+      vatAmount: estimateInvoiceColumnContentWidth(values(document => formatAmount(document.vatAmount, document.currency)), 'Tiền thuế', { headerControls: false }),
+      grandTotal: estimateInvoiceColumnContentWidth(values(document => formatAmount(document.grandTotal, document.currency)), 'Tổng tiền thanh toán'),
+      invoiceStatus: estimateInvoiceColumnContentWidth(values(document => invoiceStatusLabel(document.invoiceStatus)), 'Tình trạng hóa đơn'),
+      processingStatus: estimateInvoiceColumnContentWidth(values(document => document.processingStatus), 'Trạng thái xử lý'),
+      providerCode: estimateInvoiceColumnContentWidth(values(document => solutionProviderDisplayOf(document).label), 'NCC HĐĐT'),
+      lookupCode: estimateInvoiceColumnContentWidth(values(document => document.lookup?.lookupCode), 'Mã tra cứu'),
+      detail: estimateInvoiceColumnContentWidth(
+        values(document => document.lines?.length ? `${document.lines.length} dòng` : 'Chưa có'),
+        'Detail',
+      ),
+    };
+  }, [filteredDocuments, direction]);
+  const tableMetrics = computeInvoiceTableMetrics(publicVisibleColumnKeys, tableViewportWidth, tableContentWidthHints);
   const { layout: tableLayout } = tableMetrics;
   const columnWidths = tableLayout.columnWidths;
   const tableHasHorizontalOverflow = tableMetrics.intrinsicWidth > tableMetrics.viewportWidth;
@@ -1036,6 +1075,8 @@ export default function InvoicePage(props: Props) {
       render: (value: unknown, record: InvoiceDocument) => {
         const text = String(value ?? '').trim();
         const relationModel = relationModels.get(record.key);
+        const canViewPdf = isEhoadonDientuInvoice(record)
+          || Boolean(presentationForSolutionTaxCode(solutionProviderTaxCodeOf(record)));
         return (
           <InvoiceRelationTrigger
             document={record}
@@ -1044,8 +1085,12 @@ export default function InvoicePage(props: Props) {
             className="invoice-relation-number-trigger"
           >
             <span
-              className={`invoice-single-line-cell invoice-pdf-double-click${tvanBusyKey === record.key ? ' is-loading' : ''}`}
-              title={text ? `${text} · Nhấp đúp để xem PDF bản thể hiện` : undefined}
+              className={`invoice-single-line-cell invoice-pdf-double-click ${canViewPdf ? 'invoice-number-pdf-available' : 'invoice-number-pdf-unavailable'}${tvanBusyKey === record.key ? ' is-loading' : ''}`}
+              title={text
+                ? canViewPdf
+                  ? `${text} · Có thể xem/tải PDF bản thể hiện · Nhấp đúp để xem`
+                  : `${text} · Chưa thể xem/tải PDF bản thể hiện`
+                : undefined}
               onDoubleClick={(event) => {
                 event.preventDefault();
                 event.stopPropagation();

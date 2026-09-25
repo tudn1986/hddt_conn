@@ -1970,6 +1970,16 @@
   text-underline-offset: 3px;
 }
 
+.invoice-number-pdf-available {
+  background-color: #ecfdf5;
+  color: #047857;
+}
+
+.invoice-number-pdf-unavailable {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
 .invoice-pdf-double-click.is-loading {
   cursor: progress;
   opacity: 0.65;
