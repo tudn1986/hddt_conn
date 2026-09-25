@@ -19,6 +19,7 @@ import { AppError, ensureDir, generateId, sha256Buffer } from '../../shared/util
 import type { SettingsService } from '../services/settings.service.js';
 import { safePdfFileName } from './http.js';
 import { TvanRegistry } from './registry.js';
+import { presentationAdapters, presentationIdentityOf } from '../presentation/manifest.js';
 import type { FetchLike, TvanAdapter, TvanAdapterContext, TvanChallengeResult, TvanOriginalFileResult, TvanPdfResult, TvanTokenState } from './types.js';
 
 type PendingChallenge = {
@@ -118,6 +119,29 @@ export class TvanPdfService {
       if (!byKey.has(key)) byKey.set(key, capability);
     }
     return [...byKey.values()];
+  }
+
+  presentationAdapters() {
+    return presentationAdapters(this.registry.getAdapters());
+  }
+
+  presentationStatus(document: InvoiceDocument) {
+    const adapter = this.registry.resolve(document);
+    const capability = this.registry.capability(document);
+    return {
+      adapter: adapter ? presentationIdentityOf(adapter) : undefined,
+      capability,
+      artifact: this.artifactStatus(document),
+    };
+  }
+
+  async preparePresentation(document: InvoiceDocument) {
+    const prepared = await this.prepareView(document);
+    const adapter = this.registry.resolve(document);
+    return {
+      adapter: adapter ? presentationIdentityOf(adapter) : undefined,
+      ...prepared,
+    };
   }
 
   private documentFingerprint(document: InvoiceDocument): string {

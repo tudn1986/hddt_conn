@@ -124,7 +124,7 @@ TVAN là subsystem riêng, không đưa endpoint nhà cung cấp vào frontend. 
 - P2 / `session`: CAPTCHA một lần, token RAM dùng lại tới TTL (Viettel).
 - P3 / `per_invoice`: credential một lần/hóa đơn; engine xóa token ngay sau attempt.
 
-Mọi URL/redirect TVAN phải HTTPS và nằm trong allow-list adapter. Backport không fetch URL người dùng dán. Xem `docs/TVAN_PDF_v1.2.1.md` và `docs/TEST_REPORT_v1.2.1.md`.
+Mọi URL/redirect TVAN phải HTTPS và nằm trong allow-list adapter. Backport không fetch URL người dùng dán. Kiến trúc chuẩn cho phát triển mới, versioning adapter và quy trình bổ sung/thay đổi NCC được mô tả tại `docs/PRESENTATION_PDF_PROVIDER_ARCHITECTURE.md`. Tài liệu release hiện hành vẫn tham chiếu `docs/TVAN_PDF_v1.2.1.md` và `docs/TEST_REPORT_v1.2.1.md`.
 
 ## Connector GDT
 

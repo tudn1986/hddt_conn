@@ -483,7 +483,7 @@ export default function InvoicePage(props: Props) {
       openPdfBlob(blob, `${document.series || ''}_${document.invoiceNo || ''}`.replace(/^_+|_+$/g, ''));
     } catch (error: any) {
       if (error?.status === 428 || error?.code === 'TVAN_CAPTCHA_REQUIRED') {
-        const prepared = await api.prepareTvanPdfView(document);
+        const prepared = await api.preparePresentation(document);
         if (prepared.challenge) {
           setCaptchaAnswer('');
           setCaptchaFlow({ challenge: prepared.challenge, kind: 'view', document });
@@ -521,7 +521,7 @@ export default function InvoicePage(props: Props) {
       if (popup) popup.opener = null;
       setTvanBusyKey(document.key);
       try {
-        const resolved = await api.resolveTvanPresentationLink(document);
+        const resolved = await api.resolvePresentationLink(document);
         if (!resolved.downloadUrl) throw new Error('MISA chưa trả link bản thể hiện PDF.');
         if (popup) popup.location.replace(resolved.downloadUrl);
         else window.open(resolved.downloadUrl, '_blank', 'noopener,noreferrer');
@@ -536,7 +536,7 @@ export default function InvoicePage(props: Props) {
 
     setTvanBusyKey(document.key);
     try {
-      const prepared = await api.prepareTvanPdfView(document);
+      const prepared = await api.preparePresentation(document);
       if (!prepared.capability.supported) {
         message.warning(prepared.capability.reason || `TVAN ${prepared.capability.providerCode} chưa hỗ trợ PDF.`);
         return;
@@ -603,7 +603,7 @@ export default function InvoicePage(props: Props) {
     setTvanBatchBusy(current.kind === 'batch');
     try {
       if (current.kind === 'view' && current.document) {
-        await api.submitTvanCaptcha(current.challenge.id, answer);
+        await api.submitPresentationChallenge(current.challenge.id, answer);
         setCaptchaFlow(null);
         setCaptchaAnswer('');
         setCaptchaSliderTouched(false);

@@ -1,6 +1,9 @@
 import type {
   QueryAutoInput,
   QueryAutoResult,
+  PresentationAdapterIdentity,
+  PresentationPrepareResult,
+  PresentationStatusResult,
   TvanArtifactStatus,
   TvanBatchState,
   TvanBackportAnalysis,
@@ -231,6 +234,43 @@ export const api = {
   downloadStatus: () => request<{ running: boolean; paused: boolean; tasks: any[] }>('/api/downloads/status'),
   clearCompletedDownloads: () => request('/api/downloads/clear-completed', { method: 'POST' }),
   openDownloadFolder: () => request('/api/downloads/open-folder', { method: 'POST' }),
+
+  presentationAdapters: () => request<{ adapters: PresentationAdapterIdentity[] }>('/api/presentation/adapters'),
+  presentationStatus: (document: unknown) => request<PresentationStatusResult>('/api/presentation/status', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }),
+  preparePresentation: (document: unknown) => request<PresentationPrepareResult>('/api/presentation/prepare', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }),
+  submitPresentationChallenge: (challengeId: string, answer: string) => request<TvanCaptchaVerificationResult>('/api/presentation/challenge', {
+    method: 'POST',
+    body: JSON.stringify({ challengeId, answer }),
+  }),
+  resolvePresentationLink: (document: unknown) => request<TvanPresentationLinkResult>('/api/presentation/resolve-link', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }),
+  viewPresentationPdf: (document: unknown) => rawRequest('/api/presentation/view', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }).then((res) => res.blob()),
+  downloadPresentationPdf: (document: unknown) => rawRequest('/api/presentation/download', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }).then(async (res) => ({
+    blob: await res.blob(),
+    fileName: fileNameFromDisposition(res.headers.get('content-disposition')) || `HDDT_${Date.now()}.pdf`,
+  })),
+  downloadPresentationOriginal: (document: unknown) => rawRequest('/api/presentation/download-original', {
+    method: 'POST',
+    body: JSON.stringify({ document }),
+  }).then(async (res) => ({
+    blob: await res.blob(),
+    fileName: fileNameFromDisposition(res.headers.get('content-disposition')) || `HDDT_${Date.now()}`,
+    contentType: res.headers.get('content-type') || 'application/octet-stream',
+  })),
 
   tvanCapabilities: (documents: unknown[]) => request<{ providers: TvanProviderCapability[] }>('/api/tvan/capabilities', {
     method: 'POST',

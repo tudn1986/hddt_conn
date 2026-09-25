@@ -23,6 +23,7 @@ import { registerExportRoutes } from './routes/export.routes.js';
 import { registerInvoiceRoutes } from './routes/invoice.routes.js';
 import { registerSettingsRoutes } from './routes/settings.routes.js';
 import { registerTvanRoutes } from './routes/tvan.routes.js';
+import { registerPresentationRoutes } from './routes/presentation.routes.js';
 
 const currentDir = typeof __dirname === 'string'
   ? __dirname
@@ -281,6 +282,7 @@ export async function buildApp(options: BuildAppOptions = {}) {
   registerExportRoutes(app);
   registerSettingsRoutes(app);
   registerTvanRoutes(app);
+  registerPresentationRoutes(app);
 
   const candidates = [
     path.join(path.dirname(process.execPath), 'public'),

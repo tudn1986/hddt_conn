@@ -3,7 +3,7 @@ import { document } from '../helpers.js';
 import type { InvoiceDocument } from '../../src/shared/models/index.js';
 import { MisaTvanAdapter } from '../../src/server/tvan/adapters/misa.js';
 import { ViettelTvanAdapter } from '../../src/server/tvan/adapters/viettel.js';
-import { InvoiceTvanAdapter } from '../../src/server/tvan/adapters/invoice.js';
+import { InvoiceTvanAdapter, minvoiceLookupFromXml } from '../../src/server/tvan/adapters/invoice.js';
 import { SoftdreamsTvanAdapter } from '../../src/server/tvan/adapters/softdreams.js';
 import { TvanRegistry } from '../../src/server/tvan/registry.js';
 import { TvanBackportService } from '../../src/server/tvan/backport.service.js';
@@ -89,13 +89,14 @@ function viettelDocument(): InvoiceDocument {
   });
 }
 
-function context(fetchImpl: typeof fetch, token?: TvanTokenState) {
+function context(fetchImpl: typeof fetch, token?: TvanTokenState, loadInvoiceXml?: (document: InvoiceDocument) => Promise<Buffer>) {
   let current = token;
   const ctx: TvanAdapterContext = {
     fetchImpl,
     timeoutMs: 5_000,
     maxDownloadBytes: 5 * 1024 * 1024,
     token: current,
+    loadInvoiceXml,
     setToken: (next) => { current = next; },
   };
   return { ctx, getToken: () => current };
@@ -166,6 +167,64 @@ describe('TVAN registry and adapters', () => {
       method: 'GET',
     }]);
     expect(result.content.subarray(0, 5).toString()).toBe('%PDF-');
+  });
+
+  it('recognizes M-Invoice MSTTCGP 0106026495-001 and Mã tra cứu from ttkhac', async () => {
+    const adapter = new InvoiceTvanAdapter();
+    const doc = document({
+      providerCode: undefined,
+      lookup: undefined,
+      seller: { taxCode: '4601543745', name: 'ASTAR', dynamicFields: [] },
+      providers: { solution: { taxCode: '0106026495-001' } },
+      series: 'C26TYY',
+      invoiceNo: 3896,
+      rawSummary: {
+        nbmst: '4601543745',
+        msttcgp: '0106026495-001',
+        tvandnkntt: '0106026495',
+        ttkhac: [{ ttruong: 'Mã tra cứu', kdlieu: 'string', dlieu: 'C2CA7EB1D100A2EC' }],
+      },
+    });
+    expect(adapter.matches(doc)).toBe(true);
+    expect(adapter.capability(doc)).toMatchObject({ supported: true, providerCode: 'tvan_invoice' });
+    const result = await adapter.resolvePresentationLink!(
+      doc,
+      context((async () => { throw new Error('no network expected'); }) as typeof fetch).ctx,
+    );
+    expect(result.lookupCode).toBe('C2CA7EB1D100A2EC');
+    expect(result.providerTaxCode).toBe('0106026495-001');
+    expect(result.downloadUrl).toContain('sobaomat=C2CA7EB1D100A2EC');
+  });
+
+  it('falls back to GDT XML for M-Invoice lookup without changing SearchInvoice contract', async () => {
+    const xml = Buffer.from(
+      '<HDon><DLHDon><TTChung><MSTTCGP>0106026495-001</MSTTCGP><TTKhac><TTin>'
+      + '<TTruong>Mã tra cứu</TTruong><KDLieu>string</KDLieu><DLieu>C2CA7EB1D100A2EC</DLieu>'
+      + '</TTin></TTKhac></TTChung></DLHDon></HDon>',
+      'utf8',
+    );
+    expect(minvoiceLookupFromXml(xml)).toBe('C2CA7EB1D100A2EC');
+
+    const doc = document({
+      providerCode: 'tvan_invoice',
+      lookup: undefined,
+      seller: { taxCode: '4601543745', name: 'ASTAR', dynamicFields: [] },
+      templateNo: 1,
+      series: 'C26TYY',
+      invoiceNo: 3896,
+      rawSummary: { ngcnhat: 'tvan_invoice', nbmst: '4601543745', msttcgp: '0106026495-001' },
+    });
+    const result = await new InvoiceTvanAdapter().resolvePresentationLink!(
+      doc,
+      context(
+        (async () => { throw new Error('resolve link must not contact provider'); }) as typeof fetch,
+        undefined,
+        async () => xml,
+      ).ctx,
+    );
+    expect(result.downloadUrl).toBe(
+      'https://tracuuhoadon.minvoice.com.vn/api/Search/SearchInvoice?masothue=4601543745&sobaomat=C2CA7EB1D100A2EC&type=PDF&inchuyendoi=false',
+    );
   });
 
   it('recognizes tvan_invoice from msttcgp 0106026495 when providerCode is absent', () => {

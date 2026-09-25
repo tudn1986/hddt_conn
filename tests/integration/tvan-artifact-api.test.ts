@@ -215,4 +215,81 @@ describe('TVAN artifact public API', () => {
     expect(String(response.headers['content-disposition'])).toContain('provider-original.zip');
     expect(String(response.headers['content-disposition'])).not.toContain('/opt/');
   });
+
+  it('exposes the stable presentation facade without changing provider implementation', async () => {
+    const built = await buildApp({ connectorMode: 'mock', logger: false });
+    app = built.app;
+    const owner = await browser(app);
+    const context = app.sessions.resolve(owner.sessionId);
+    expect(context).toBeTruthy();
+
+    const doc = document({ key: 'presentation-facade', providerCode: 'tvan_invoice' });
+    const payload = { document: doc };
+    const headers = { cookie: owner.cookie, 'x-hddt-csrf': owner.csrfToken };
+
+    const adapters = await app.inject({ method: 'GET', url: '/api/presentation/adapters', headers: { cookie: owner.cookie } });
+    expect(adapters.statusCode).toBe(200);
+    expect(adapters.json().adapters).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        providerFamily: 'minvoice',
+        providerCode: 'tvan_invoice',
+        adapterId: 'minvoice-searchinvoice-v1',
+        adapterVersion: '1.0.0',
+      }),
+    ]));
+
+    (context!.tvanPdf as any).presentationStatus = () => ({
+      adapter: {
+        providerFamily: 'minvoice',
+        providerCode: 'tvan_invoice',
+        adapterId: 'minvoice-searchinvoice-v1',
+        adapterVersion: '1.0.0',
+        displayName: 'M-Invoice',
+      },
+      capability: { providerCode: 'tvan_invoice', displayName: 'M-Invoice', supported: true, captchaMode: 'none', priority: 'P1' },
+      artifact: { providerCode: 'tvan_invoice', stage: 'new', ready: false, canRetryPrepare: false, canView: false, canDownloadPdf: false, canDownloadOriginal: false },
+    });
+    (context!.tvanPdf as any).preparePresentation = async () => ({
+      adapter: {
+        providerFamily: 'minvoice',
+        providerCode: 'tvan_invoice',
+        adapterId: 'minvoice-searchinvoice-v1',
+        adapterVersion: '1.0.0',
+        displayName: 'M-Invoice',
+      },
+      capability: { providerCode: 'tvan_invoice', displayName: 'M-Invoice', supported: true, captchaMode: 'none', priority: 'P1' },
+      ready: true,
+    });
+    (context!.tvanPdf as any).viewPdf = async () => ({
+      content: Buffer.from('%PDF-1.7\n%%EOF\n'),
+      fileName: 'minvoice.pdf',
+      contentType: 'application/pdf',
+    });
+
+    for (const url of ['/api/presentation/status', '/api/presentation/prepare', '/api/presentation/view', '/api/presentation/download']) {
+      const denied = await app.inject({ method: 'POST', url, headers: { cookie: owner.cookie }, payload });
+      expect(denied.statusCode).toBe(403);
+    }
+
+    const status = await app.inject({ method: 'POST', url: '/api/presentation/status', headers, payload });
+    expect(status.statusCode).toBe(200);
+    expect(status.json()).toMatchObject({
+      adapter: { adapterId: 'minvoice-searchinvoice-v1', adapterVersion: '1.0.0' },
+      capability: { supported: true },
+    });
+
+    const prepared = await app.inject({ method: 'POST', url: '/api/presentation/prepare', headers, payload });
+    expect(prepared.statusCode).toBe(200);
+    expect(prepared.json()).toMatchObject({ ready: true, adapter: { providerFamily: 'minvoice' } });
+
+    const view = await app.inject({ method: 'POST', url: '/api/presentation/view', headers, payload });
+    expect(view.statusCode).toBe(200);
+    expect(view.headers['content-type']).toContain('application/pdf');
+    expect(String(view.headers['content-disposition'])).toContain('inline');
+
+    const download = await app.inject({ method: 'POST', url: '/api/presentation/download', headers, payload });
+    expect(download.statusCode).toBe(200);
+    expect(String(download.headers['content-disposition'])).toContain('attachment');
+    expect(String(download.headers['content-disposition'])).toContain('minvoice.pdf');
+  });
 });

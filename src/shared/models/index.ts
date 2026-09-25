@@ -71,6 +71,27 @@ export interface TvanProviderCapability {
   reason?: string;
 }
 
+export interface PresentationAdapterIdentity {
+  providerFamily: string;
+  providerCode: string;
+  adapterId: string;
+  adapterVersion: string;
+  displayName: string;
+}
+
+export interface PresentationStatusResult {
+  adapter?: PresentationAdapterIdentity;
+  capability: TvanProviderCapability;
+  artifact: TvanArtifactStatus;
+}
+
+export interface PresentationPrepareResult {
+  adapter?: PresentationAdapterIdentity;
+  capability: TvanProviderCapability;
+  ready: boolean;
+  challenge?: TvanCaptchaChallenge;
+}
+
 export interface TvanPresentationStep {
   stage: 'lookup_code' | 'metadata' | 'custom_data' | 'seller_tax_code' | 'security_code' | 'presentation_link';
   status: 'ok' | 'ready';
