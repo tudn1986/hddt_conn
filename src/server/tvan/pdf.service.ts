@@ -35,6 +35,9 @@ type CachedArtifact = {
   id: string;
   cacheKey: string;
   providerCode: string;
+  providerFamily: string;
+  adapterId: string;
+  adapterVersion: string;
   original: Buffer;
   originalFileName: string;
   originalContentType: 'application/pdf' | 'application/zip';
@@ -160,17 +163,22 @@ export class TvanPdfService {
     }), 'utf8'));
   }
 
+  private adapterRuntimeKey(adapter: TvanAdapter): string {
+    const identity = presentationIdentityOf(adapter);
+    return `${adapter.providerCode}|${identity.adapterId}@${identity.adapterVersion}`;
+  }
+
   private artifactCacheKey(adapter: TvanAdapter, document: InvoiceDocument): string {
-    return `${adapter.providerCode}|${this.documentFingerprint(document)}`;
+    return `${this.adapterRuntimeKey(adapter)}|${this.documentFingerprint(document)}`;
   }
 
   private tokenKey(adapter: TvanAdapter, document?: InvoiceDocument): string {
     if (adapter.captchaMode === 'per_invoice') {
       return document
         ? this.artifactCacheKey(adapter, document)
-        : `${adapter.providerCode}|__missing_document__`;
+        : `${this.adapterRuntimeKey(adapter)}|__missing_document__`;
     }
-    return adapter.providerCode;
+    return this.adapterRuntimeKey(adapter);
   }
 
   private tokenFor(adapter: TvanAdapter, document?: InvoiceDocument): TvanTokenState | undefined {
@@ -232,11 +240,15 @@ export class TvanPdfService {
           pdfFileName: pdf.fileName,
         }));
       const id = generateId();
+      const identity = presentationIdentityOf(adapter);
       const artifact: CachedArtifact = {
         ...prepared,
         id,
         cacheKey,
         providerCode: adapter.providerCode,
+        providerFamily: identity.providerFamily,
+        adapterId: identity.adapterId,
+        adapterVersion: identity.adapterVersion,
         expiresAt: Date.now() + this.artifactTtlMs,
       };
       this.artifactCache.set(cacheKey, artifact);
@@ -254,6 +266,9 @@ export class TvanPdfService {
     return {
       id: artifact.id,
       providerCode: artifact.providerCode,
+      providerFamily: artifact.providerFamily,
+      adapterId: artifact.adapterId,
+      adapterVersion: artifact.adapterVersion,
       originalFileName: artifact.originalFileName,
       originalContentType: artifact.originalContentType,
       pdfFileName: artifact.pdfFileName,
