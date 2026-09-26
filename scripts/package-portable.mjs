@@ -1,12 +1,10 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import yazl from 'yazl';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
-const projectRequire = createRequire(import.meta.url);
 const packageJson = JSON.parse(await fs.readFile(path.join(projectRoot, 'package.json'), 'utf8'));
 const appVersion = String(packageJson.version || '').trim();
 if (!appVersion) throw new Error('package.json version is required');
@@ -73,8 +71,6 @@ runPnpm([
   '--target=node22', '--legal-comments=none', '--minify',
   '--define:process.env.NODE_ENV="production"',
   '--define:import.meta.url="file:///__hddt_sea__/app.js"',
-  '--external:playwright-core',
-  '--banner:js=const __hddtCreateRequire = require("node:module").createRequire; require = __hddtCreateRequire(process.execPath);',
   `--outfile=${bundlePath}`,
 ]);
 
@@ -105,18 +101,6 @@ if (targetPlatform === 'darwin') run('codesign', ['--sign', '-', executablePath]
 if (targetPlatform !== 'win32') await fs.chmod(executablePath, 0o755);
 
 await fs.cp(path.join(projectRoot, 'dist', 'public'), path.join(releaseDir, 'public'), { recursive: true });
-
-// Playwright cannot be safely flattened into the SEA bundle: its published
-// coreBundle contains optional Chromium BiDi requires and resolves its own
-// package metadata from the filesystem. Keep the upstream package intact next
-// to the executable and let the SEA banner's createRequire() resolve it there.
-const playwrightCoreRoot = path.dirname(projectRequire.resolve('playwright-core/package.json'));
-await fs.cp(
-  playwrightCoreRoot,
-  path.join(releaseDir, 'node_modules', 'playwright-core'),
-  { recursive: true, dereference: true },
-);
-
 for (const fileName of ['README_FIRST.txt', 'LICENSE.txt', 'VERSION']) {
   await fs.copyFile(path.join(projectRoot, fileName), path.join(releaseDir, fileName));
 }
