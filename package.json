@@ -29,7 +29,7 @@
     "verify": "npm run lint && npm run test && npm run build && npm run smoke"
   },
   "engines": {
-    "node": ">=22.12"
+    "node": ">=22.13"
   },
   "dependencies": {
     "@fastify/static": "^10.1.3",

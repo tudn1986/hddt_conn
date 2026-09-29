@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 echo "Runtime: $(node -p \"process.platform+' '+process.arch+' '+process.versions.node\")"
-node -e "const [a,b]=process.versions.node.split('.').map(Number);if(a<22||(a===22&&b<12))process.exit(1)" || { echo 'Node.js 22.12+ is required.'; exit 1; }
+node -e "const [a,b]=process.versions.node.split('.').map(Number);if(a<22||(a===22&&b<13))process.exit(1)" || { echo 'Node.js 22.13+ is required.'; exit 1; }
 corepack enable
 corepack prepare pnpm@11.19.0 --activate
 pnpm install --frozen-lockfile
