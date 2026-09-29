@@ -10,8 +10,8 @@ src/server/services/tvan-catalog.service.ts
 src/shared/tvan-catalog/index.ts
 tests/unit/tvan-catalog.test.ts
 tests/integration/admin-tvan-catalog.test.ts
-docs/TVAN_CATALOG_DATABASE_DESIGN_v1.3.0-rc.1.md
-docs/TVAN_CATALOG_PATCH_FILE_LIST_v1.3.0-rc.1.md
+docs/tvan_design/design/TVAN_CATALOG_DATABASE_DESIGN_v1.3.0-rc.1.md
+docs/tvan_design/design/TVAN_CATALOG_PATCH_FILE_LIST_v1.3.0-rc.1.md
 ```
 
 ## File sửa / upload đè

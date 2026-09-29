@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="480" viewBox="0 0 1600 480">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#073B7A"/><stop offset="1" stop-color="#0B78D0"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#00264D" flood-opacity="0.22"/></filter>
+  </defs>
+  <rect width="1600" height="480" rx="96" fill="#F6FBFF"/>
+  <g transform="translate(92 64)">
+    <rect width="352" height="352" rx="84" fill="url(#bg)"/>
+    <circle cx="176" cy="176" r="126" fill="#FFFFFF" opacity="0.08"/>
+    <g filter="url(#shadow)">
+      <rect x="110" y="56" width="154" height="220" rx="22" fill="#FFFFFF"/>
+      <rect x="130" y="82" width="74" height="12" rx="6" fill="#0B5FB8"/>
+      <rect x="130" y="122" width="112" height="10" rx="5" fill="#D7E8F8"/><rect x="130" y="152" width="94" height="10" rx="5" fill="#D7E8F8"/><rect x="130" y="182" width="112" height="10" rx="5" fill="#D7E8F8"/>
+      <circle cx="224" cy="238" r="38" fill="#18A66A"/><path d="M206 238l15 15 30-34" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  <text x="520" y="218" font-family="Arial, Helvetica, sans-serif" font-size="110" font-weight="900" fill="#073B7A">hddt_conn</text>
+  <text x="526" y="292" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="600" fill="#45749E">Ứng dụng tra cứu hóa đơn điện tử</text>
+  <text x="526" y="352" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="500" fill="#6C8AAA">Nhanh chóng • Chính xác • Dễ sử dụng</text>
+</svg>

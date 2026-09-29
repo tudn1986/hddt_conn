@@ -6,6 +6,7 @@ node -e "const [a,b]=process.versions.node.split('.').map(Number);if(a<22||(a===
 corepack enable
 corepack prepare pnpm@11.19.0 --activate
 pnpm install --frozen-lockfile
+command -v magick >/dev/null 2>&1 || { echo 'ImageMagick (magick) is required for the branded macOS icon.'; exit 1; }
 pnpm verify
 ARCH="$(node -p 'process.arch')"
 if [ "$ARCH" = "arm64" ]; then

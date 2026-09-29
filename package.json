@@ -1,8 +1,8 @@
 {
   "name": "hddt",
-  "version": "1.3.0-rc.2",
+  "version": "1.3.1",
   "private": true,
-  "description": "hddt-conn v1.3.0-rc.2 - WebUI kết nối và quản lý hóa đơn điện tử Việt Nam",
+  "description": "hddt-conn v1.3.1 - WebUI kết nối và quản lý hóa đơn điện tử Việt Nam",
   "type": "module",
   "main": "dist/server/index.js",
   "scripts": {

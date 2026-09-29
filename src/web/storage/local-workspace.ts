@@ -93,6 +93,50 @@ function datasetFileName(direction: Direction, fromDate: string, toDate: string)
   return `HDDT_${direction === 'purchase' ? 'PURCHASE' : 'SALES'}_${fromDate.replace(/-/g, '')}_${toDate.replace(/-/g, '')}.json`;
 }
 
+export function selectedDatasetFileName(
+  direction: Direction,
+  fromDate: string,
+  toDate: string,
+  recordCount: number,
+  createdAt: Date = new Date(),
+): string {
+  const timestamp = createdAt.toISOString().replace(/[-:.]/g, '');
+  return `HDDT_${direction === 'purchase' ? 'PURCHASE' : 'SALES'}_SELECTED_${fromDate.replace(/-/g, '')}_${toDate.replace(/-/g, '')}_${recordCount}HD_${timestamp}.json`;
+}
+
+type SelectedDatasetInput = {
+  accountTaxCode: string;
+  direction: Direction;
+  fromDate: string;
+  toDate: string;
+  documents: InvoiceDocument[];
+  sourceRecordCount: number;
+};
+
+export function buildSelectedDataset(input: SelectedDatasetInput, createdAt = new Date().toISOString()): DatasetFile {
+  return {
+    format: 'hddt-dataset', schemaVersion: 1, appVersion: '1.3.1-public',
+    meta: {
+      accountTaxCode: input.accountTaxCode, direction: input.direction, fromDate: input.fromDate, toDate: input.toDate,
+      createdAt, source: 'hoadondientu.gdt.gov.vn', recordCount: input.documents.length,
+      detailCount: input.documents.filter((item) => item.lines.length > 0).length,
+      sourceCounts: {
+        standard: input.documents.filter((item) => (item.invoiceSource ?? 'standard') === 'standard').length,
+        pos: input.documents.filter((item) => item.invoiceSource === 'pos').length,
+      },
+      datasetScope: 'selection',
+      coverageComplete: false,
+      sourceRecordCount: Math.max(input.sourceRecordCount, input.documents.length),
+    },
+    documents: input.documents.map((document) => ({
+      key: document.key,
+      normalized: { ...structuredClone(document), rawSummary: undefined, rawDetail: undefined },
+      rawSummary: document.rawSummary,
+      rawDetail: document.rawDetail,
+    })),
+  };
+}
+
 export const localWorkspace = {
   supported: () => typeof window.showDirectoryPicker === 'function' && typeof indexedDB !== 'undefined',
   currentName: async () => (await loadHandle())?.name ?? null,
@@ -107,7 +151,7 @@ export const localWorkspace = {
   saveBlob: saveBlobToWorkspace,
   saveDataset: async (input: { accountTaxCode: string; direction: Direction; fromDate: string; toDate: string; documents: InvoiceDocument[] }) => {
     const dataset: DatasetFile = {
-      format: 'hddt-dataset', schemaVersion: 1, appVersion: '1.3.0-rc.2-public',
+      format: 'hddt-dataset', schemaVersion: 1, appVersion: '1.3.1-public',
       meta: {
         accountTaxCode: input.accountTaxCode, direction: input.direction, fromDate: input.fromDate, toDate: input.toDate,
         createdAt: new Date().toISOString(), source: 'hoadondientu.gdt.gov.vn', recordCount: input.documents.length,
@@ -125,6 +169,13 @@ export const localWorkspace = {
       })),
     };
     const fileName = datasetFileName(input.direction, input.fromDate, input.toDate);
+    const destination = await saveBlobToWorkspace(new Blob([JSON.stringify(dataset, null, 2)], { type: 'application/json' }), fileName, input.accountTaxCode);
+    return { fileName, destination };
+  },
+  saveSelectedDataset: async (input: SelectedDatasetInput) => {
+    const createdAt = new Date();
+    const dataset = buildSelectedDataset(input, createdAt.toISOString());
+    const fileName = selectedDatasetFileName(input.direction, input.fromDate, input.toDate, input.documents.length, createdAt);
     const destination = await saveBlobToWorkspace(new Blob([JSON.stringify(dataset, null, 2)], { type: 'application/json' }), fileName, input.accountTaxCode);
     return { fileName, destination };
   },

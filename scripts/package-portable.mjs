@@ -57,13 +57,21 @@ function runPnpm(commandArgs, options = {}) {
 runPnpm(['run', 'build']);
 const workDir = path.join(projectRoot, '.package-work');
 const platformLabel = targetPlatform === 'win32' ? 'windows' : targetPlatform === 'darwin' ? 'macos' : 'linux';
-const artifactBase = `HDDT_v${appVersion}_${platformLabel}_${targetArch}`;
+const artifactBase = `hddt_conn_v${appVersion}_${platformLabel}_${targetArch}`;
 const releaseRoot = path.join(projectRoot, 'release');
 const releaseDir = path.join(releaseRoot, artifactBase);
 await fs.rm(workDir, { recursive: true, force: true });
 await fs.rm(releaseDir, { recursive: true, force: true });
 await fs.mkdir(workDir, { recursive: true });
 await fs.mkdir(releaseDir, { recursive: true });
+const brandingSvg = path.join(projectRoot, 'assets', 'branding', 'hddt_conn_icon_app_1024.svg');
+
+async function firstExisting(paths) {
+  for (const candidate of paths) {
+    try { await fs.access(candidate); return candidate; } catch {}
+  }
+  return undefined;
+}
 
 const bundlePath = path.join(workDir, 'hddt.cjs');
 runPnpm([
@@ -114,6 +122,24 @@ if (targetPlatform === 'win32') {
   await fs.copyFile(path.join(projectRoot, 'Start-HDDT.cmd'), path.join(releaseDir, 'Start-HDDT.cmd'));
   await fs.copyFile(path.join(projectRoot, 'Start-HDDT.vbs'), path.join(releaseDir, 'Start-HDDT.vbs'));
   await fs.copyFile(path.join(projectRoot, 'HDDT-Tray.ps1'), path.join(releaseDir, 'HDDT-Tray.ps1'));
+
+  const windowsIcon = path.join(releaseDir, 'hddt_conn.ico');
+  run('magick', [brandingSvg, '-background', 'none', '-define', 'icon:auto-resize=256,128,64,48,32,16', windowsIcon]);
+
+  const systemRoot = process.env.WINDIR || process.env.SystemRoot || 'C:\\Windows';
+  const cscPath = await firstExisting([
+    path.join(systemRoot, 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe'),
+    path.join(systemRoot, 'Microsoft.NET', 'Framework', 'v4.0.30319', 'csc.exe'),
+  ]);
+  if (!cscPath) throw new Error('Windows C# compiler (csc.exe) is required to build HDDT_CONN.exe.');
+  run(cscPath, [
+    '/nologo',
+    '/target:winexe',
+    '/reference:System.Windows.Forms.dll',
+    `/win32icon:${windowsIcon}`,
+    `/out:${path.join(releaseDir, 'HDDT_CONN.exe')}`,
+    path.join(projectRoot, 'scripts', 'windows-launcher.cs'),
+  ]);
 } else if (targetPlatform === 'darwin') {
   const commandLauncher = path.join(releaseDir, 'Start HDDT.command');
   await fs.copyFile(path.join(projectRoot, 'Start HDDT.command'), commandLauncher);
@@ -128,8 +154,27 @@ if (targetPlatform === 'win32') {
     '-o', appLauncher,
     path.join(projectRoot, 'scripts', 'macos-launcher.applescript'),
   ]);
+  const iconsetDir = path.join(workDir, 'hddt_conn.iconset');
+  await fs.mkdir(iconsetDir, { recursive: true });
+  const iconsetSizes = [
+    ['icon_16x16.png', 16], ['icon_16x16@2x.png', 32],
+    ['icon_32x32.png', 32], ['icon_32x32@2x.png', 64],
+    ['icon_128x128.png', 128], ['icon_128x128@2x.png', 256],
+    ['icon_256x256.png', 256], ['icon_256x256@2x.png', 512],
+    ['icon_512x512.png', 512], ['icon_512x512@2x.png', 1024],
+  ];
+  for (const [fileName, size] of iconsetSizes) {
+    run('magick', [brandingSvg, '-background', 'none', '-resize', `${size}x${size}`, path.join(iconsetDir, fileName)]);
+  }
+  const macIcon = path.join(workDir, 'hddt_conn.icns');
+  run('/usr/bin/iconutil', ['-c', 'icns', iconsetDir, '-o', macIcon]);
+  const resourcesDir = path.join(appLauncher, 'Contents', 'Resources');
+  await fs.mkdir(resourcesDir, { recursive: true });
+  await fs.copyFile(macIcon, path.join(resourcesDir, 'hddt_conn.icns'));
+
   const infoPlist = path.join(appLauncher, 'Contents', 'Info.plist');
   run('/usr/libexec/PlistBuddy', ['-c', 'Add :LSUIElement bool true', infoPlist]);
+  run('/usr/libexec/PlistBuddy', ['-c', 'Add :CFBundleIconFile string hddt_conn.icns', infoPlist]);
   run('codesign', ['--force', '--deep', '--sign', '-', appLauncher]);
 }
 await fs.writeFile(path.join(releaseDir, 'BUILD_INFO.json'), `${JSON.stringify({

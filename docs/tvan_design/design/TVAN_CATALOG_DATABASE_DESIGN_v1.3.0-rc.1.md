@@ -1007,7 +1007,7 @@ tests/integration/admin-tvan-catalog.test.ts
 Khuyến nghị thêm:
 
 ```text
-docs/TVAN_CATALOG_DATABASE_DESIGN_v1.3.0-rc.1.md
+docs/tvan_design/design/TVAN_CATALOG_DATABASE_DESIGN_v1.3.0-rc.1.md
 ```
 
 Chính là tài liệu thiết kế này.
@@ -2251,7 +2251,7 @@ src/server/services/tvan-catalog.service.ts
 src/shared/tvan-catalog/index.ts
 tests/unit/tvan-catalog.test.ts
 tests/integration/admin-tvan-catalog.test.ts
-docs/TVAN_CATALOG_DATABASE_DESIGN_v1.3.0-rc.1.md
+docs/tvan_design/design/TVAN_CATALOG_DATABASE_DESIGN_v1.3.0-rc.1.md
 ```
 
 ## MODIFY / REPLACE

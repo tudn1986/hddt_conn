@@ -1553,14 +1553,20 @@
 }
 
 .app-topbar-brand {
-  min-width: 96px;
-  padding-inline: 10px;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  text-align: center;
+  display: flex;
+  min-width: 142px;
+  padding-inline: 4px;
+  align-items: center;
+  justify-content: center;
   white-space: nowrap;
+}
+
+.app-topbar-brand-logo {
+  display: block;
+  width: auto;
+  max-width: 150px;
+  height: 32px;
+  border-radius: 6px;
 }
 
 .app-topbar .app-session-group {
@@ -1919,9 +1925,13 @@
   }
 
   .app-topbar-brand {
-    min-width: 84px;
-    padding-inline: 6px;
-    font-size: 14px;
+    min-width: 126px;
+    padding-inline: 3px;
+  }
+
+  .app-topbar-brand-logo {
+    max-width: 134px;
+    height: 30px;
   }
 
   .app-topbar .app-session-tax-code.ant-typography {

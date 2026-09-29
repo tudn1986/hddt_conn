@@ -16,6 +16,7 @@ import {
 import { api, type AppStatus } from './api/client';
 import type { DatasetFile, InvoiceDocument } from '../shared/models/index.js';
 import type { InvoiceMenuActions } from './pages/InvoicePage';
+import { authoritativeCoverageRange } from './storage/dataset-coverage';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const InvoicePage = lazy(() => import('./pages/InvoicePage'));
@@ -46,6 +47,7 @@ function MainApp() {
   const [dateRange, setDateRange] = useState<[string, string] | null>(null);
   /** Last fully covered dataset range; distinct from the range currently requested in the UI. */
   const [coverageRange, setCoverageRange] = useState<[string, string] | null>(null);
+  const [openedDatasetScope, setOpenedDatasetScope] = useState<'full' | 'selection' | null>(null);
   const [invoiceMenuActions, setInvoiceMenuActions] = useState<InvoiceMenuActions | null>(null);
   const [selectedInvoiceKeys, setSelectedInvoiceKeys] = useState<React.Key[]>([]);
   const selectedDocuments = useMemo(() => {
@@ -83,13 +85,20 @@ function MainApp() {
     if (dataset.meta?.fromDate && dataset.meta?.toDate) {
       const range: [string, string] = [dataset.meta.fromDate, dataset.meta.toDate];
       setDateRange(range);
-      setCoverageRange(range);
+      const authoritativeRange = authoritativeCoverageRange(dataset);
+      setCoverageRange(authoritativeRange);
+      setOpenedDatasetScope(authoritativeRange ? 'full' : 'selection');
     }
     setOfflineTaxCode(dataset.meta?.accountTaxCode || null);
     setSelectedInvoiceKeys([]);
     setOfflineMode(true);
     setPage('invoices');
   };
+
+  const updateCoverageRange = useCallback((range: [string, string] | null) => {
+    setCoverageRange(range);
+    if (range) setOpenedDatasetScope('full');
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -244,7 +253,11 @@ function MainApp() {
         </div>
 
         <div className="app-topbar-brand" title={offlineMode && !authenticated ? 'Dataset ngoại tuyến' : status?.connectorMode === 'mock' ? 'Kết nối MOCK' : 'Kết nối GDT LIVE'}>
-          hddt-conn
+          <img
+            src="/branding/hddt_conn_web_logo_horizontal.svg"
+            alt="hddt_conn"
+            className="app-topbar-brand-logo"
+          />
         </div>
 
         <Space className="app-session-group" size={4}>
@@ -270,7 +283,8 @@ function MainApp() {
               dateRange={dateRange}
               setDateRange={setDateRange}
               coverageRange={coverageRange}
-              setCoverageRange={setCoverageRange}
+              setCoverageRange={updateCoverageRange}
+              openedDatasetScope={openedDatasetScope}
               username={username}
               authenticated={authenticated}
               capabilities={status?.capabilities}

@@ -29,7 +29,7 @@ try {
   };
 
   const status = await (await get('/api/app/status')).json();
-  if (status.version !== '1.3.0-rc.2' || !status.csrfToken || status.config.storageMode !== 'browser') throw new Error('invalid public status payload');
+  if (status.version !== '1.3.1' || !status.csrfToken || status.config.storageMode !== 'browser') throw new Error('invalid public status payload');
   csrf = status.csrfToken;
   const captcha = await (await get('/api/auth/captcha')).json();
   const login = await (await post('/api/auth/login', { username: '0101234567', password: 'smoke-memory-only', captcha: 'AB12', ckey: captcha.ckey })).json();

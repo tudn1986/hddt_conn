@@ -1,42 +1,1670 @@
 {
-  "format": "hddt-public-release-candidate-manifest",
+  "format": "hddt-source-release-manifest",
   "schemaVersion": 1,
-  "appVersion": "1.3.0-rc.2",
-  "generatedAt": "2026-09-23T14:27:00+07:00",
-  "scope": "public-web-docker-source-release-candidate-custom-admin-ui-tvan-catalog-db-selected-export",
+  "appVersion": "1.3.1",
+  "releaseRevision": "1.3.1",
+  "generatedAt": "2026-09-29T06:27:39.417Z",
+  "scope": "source",
+  "manifestSelfExcluded": true,
+  "fileCount": 328,
+  "totalBytes": 2930122,
   "verification": {
-    "sourceBaseline": "hddt_conn_v1.3.0-rc.1 plus selected-only export and item-code reporting patch",
-    "typescriptSyntax": "pass-92-ts-tsx-files-0-syntax-errors",
-    "nodeScriptSyntax": "pass-modified-mjs-node-check",
-    "dependencyInstall": "blocked-online-install-timeout-and-offline-cache-missing-ant-design-icons",
-    "typecheckLint": "not-run-full-dependencies-unavailable",
-    "tests": "export-test-updated-but-full-suite-not-run-full-dependencies-unavailable",
-    "productionBuild": "not-run-full-dependencies-unavailable",
-    "dockerBuild": "not-run-docker-runtime-unavailable",
+    "report": "docs/RELEASE_NOTES_v1.3.1.md",
+    "dependencyEnabledVerify": "pnpm-verify-required-before-packaging",
+    "typescriptSyntaxParse": "covered-by-pnpm-verify",
+    "mjsSyntax": "covered-by-pnpm-verify",
+    "selectedOnlyExportStaticAssertions": "pass",
+    "liveGdtCredentialTest": "not-run-no-authorized-credentials",
     "deploymentAcceptance": "required-on-target-environment"
   },
-  "requiredDocs": [
-    "README_PUBLIC.md",
-    "docs/PUBLIC_DOCKER_DEPLOYMENT.md",
-    "docs/RELEASE_CANDIDATE_ACCEPTANCE.md",
-    "docs/RELEASE_NOTES_v1.3.0-rc.2.md"
-  ],
-  "legacyWarning": "Files and documents describing older portable/local/VM300 releases are retained as historical source context; follow the current deployment documentation for this release.",
-  "customizations": [
-    "Bumps application version to 1.3.0-rc.2.",
-    "Retains the existing /admin WebUI and TVAN Catalog DB functionality from the rc.1 source baseline.",
-    "Moves invoice row selection to the application level so the selected invoice set is shared across invoice, download and accounting-export pages.",
-    "Bulk Excel, TVAN PDF and XML/ZIP operations consume only the selected invoice set.",
-    "Accounting report/profile exports and on-screen summaries consume only the selected invoice set.",
-    "Adds InvoiceLine.itemCode as the Mã hàng hóa/dịch vụ column in the ChiTiet Excel sheet and preserves it as text.",
-    "Shows Mã hàng hóa/dịch vụ in the HHDV detail modal and accounting HHDV report.",
-    "Adds an export unit-test assertion for itemCode value and Excel text formatting.",
-    "Updates source packaging output naming to hddt_conn_v<version>.zip using VERSION dynamically."
-  ],
   "knownLimits": [
-    "A selected invoice without hydrated detail lines can still be exported, but its ChiTiet rows are unavailable until detail is loaded.",
+    "Selected invoices without hydrated detail lines have no ChiTiet rows until GDT detail is loaded.",
     "TVAN PDF batch remains subject to provider capability, CAPTCHA and the existing batch request limit.",
-    "AMIS profiles remain foundation mappings until an official verified workbook is provided.",
-    "Full dependency-enabled verify/build must be run in the target CI or deployment environment before production acceptance."
+    "Type 06 list summaries from some providers contain no HHDV amount; correct subtotal requires GDT detail hydration and is never fabricated from an empty summary.",
+    "POS sales endpoint is empty until captured and verified.",
+    "AMIS profiles are foundation mappings until an official workbook is provided.",
+    "Full dependency-enabled verify/build must run in CI or the target deployment environment before production acceptance."
+  ],
+  "files": [
+    {
+      "path": ".dockerignore",
+      "size": 149,
+      "sha256": "3d5d7bd6823db7bcbc167d1f10e0009bfcffeb627543d09f49cccb923ba33ed8"
+    },
+    {
+      "path": ".env.example",
+      "size": 580,
+      "sha256": "df77bef9d392ff12b96259c2d646d3fb4663abe47ea982e918629b6e81d48365"
+    },
+    {
+      "path": ".github/workflows/release-windows-v1.3.1.yml",
+      "size": 3014,
+      "sha256": "5f708c4ffdcae1da6ee01843183041361258a15cb7dac9eb523ec57a9e6ce014"
+    },
+    {
+      "path": ".gitignore",
+      "size": 119,
+      "sha256": "4fbf5a5910308a5ca5ba0f2a2b0508333cc26896f152487c8d436891c694d34c"
+    },
+    {
+      "path": "assets/branding/hddt_conn_avatar_corporate.svg",
+      "size": 2061,
+      "sha256": "3a483afa51f59ef48286e5f2666bdcb39f40b27c93419ed1973e7242da66d6bc"
+    },
+    {
+      "path": "assets/branding/hddt_conn_icon_app_1024.svg",
+      "size": 1662,
+      "sha256": "9f36df23b89805f5f7a4daabe742421960c6afe640210469d500cd17cd615884"
+    },
+    {
+      "path": "AUDIT_TVAN_MISA_2026-09-18.md",
+      "size": 2679,
+      "sha256": "528b7f3c382f038d75b201fb15b9051a484c69387e6917648d3aa1df3e146c65"
+    },
+    {
+      "path": "BUILD-PORTABLE-macOS.command",
+      "size": 774,
+      "sha256": "6848f31edf7dc381f6e242f440e9ca8a153fdbe2a6e16edc083827325c6b67cd"
+    },
+    {
+      "path": "BUILD-PORTABLE-WINDOWS.cmd",
+      "size": 884,
+      "sha256": "f105d3f9d0ba36fc5771d4d40226234115f44440e1600882edfc307c5bbf8377"
+    },
+    {
+      "path": "compose.dev.yml",
+      "size": 1749,
+      "sha256": "e7b5e6eaec248ac93ec1a95ad0e01233aa480a1721995323bd79aaa96299b7e9"
+    },
+    {
+      "path": "compose.yml",
+      "size": 1936,
+      "sha256": "4e6e56907297dbfbfb1dbd5cd756b6671f1e3c67cd33e468bf22bc4d8ab2b569"
+    },
+    {
+      "path": "DATA_ARCHITECTURE_CURRENT.md",
+      "size": 14581,
+      "sha256": "1ab0ab49336e65c12262b5de0ccc60ad39ed3bf333cb75fd5cd924ca823a62ce"
+    },
+    {
+      "path": "deploy/backup-data.sh",
+      "size": 514,
+      "sha256": "5541cf718eacc6067edfd405348823b3f5117baf48ad4c60e8e502a02069393e"
+    },
+    {
+      "path": "deploy/build-update.sh",
+      "size": 636,
+      "sha256": "947d79c1cdba91d0c580cebeba707677449430c8e0baaa6fbd30cdafac0aea4f"
+    },
+    {
+      "path": "deploy/Caddyfile",
+      "size": 669,
+      "sha256": "87b21e21d2b7280263dce5a117f7d8c59d3d50eff5d4e9c6b043a66e049b415d"
+    },
+    {
+      "path": "deploy/portainer-stack-vm300-v1.3.0-rc.1-admin-ui-r1.yml",
+      "size": 1508,
+      "sha256": "3e73b992c49231499e1507521bd6dc2f2e77725d6b8e1a66dbc37edb07700afd"
+    },
+    {
+      "path": "deploy/portainer-stack-vm300-v1.3.0-rc.1.yml",
+      "size": 1185,
+      "sha256": "66c7e8f61fc170b7cfbfba83e836fac982f5e417465bed51634f8c30c195956f"
+    },
+    {
+      "path": "deploy/portainer-stack-vm300.yml",
+      "size": 1156,
+      "sha256": "89bda9aba762fd521cc54639d7d5aeef451617776befb4b0909713b6d2e2df20"
+    },
+    {
+      "path": "deploy/portainer-stack.yml",
+      "size": 1275,
+      "sha256": "fc2aaaffbb7eac21136b20e4cd761c4020f51427f25b124f693a4835b45224ce"
+    },
+    {
+      "path": "deploy/portainer.env.example",
+      "size": 414,
+      "sha256": "46e92c823cde4df06c26858eb90fd56a7285becef3a629552781f3d2c96ee303"
+    },
+    {
+      "path": "deploy/prepare-vm300.sh",
+      "size": 1074,
+      "sha256": "72179e2987d2c776ab64f59eec1f7039313cef7538cdf01817979277da898c63"
+    },
+    {
+      "path": "deploy/QUICK_START_VM300.txt",
+      "size": 1052,
+      "sha256": "0c49dbb29bebd7d6725e219704e035872c20642447af2572799abd0a88b86865"
+    },
+    {
+      "path": "deploy/restore-data.sh",
+      "size": 762,
+      "sha256": "59d5effddb310db7553b467170eb6aee758e9aa9039dc617045c4053dadceb63"
+    },
+    {
+      "path": "Dockerfile",
+      "size": 1662,
+      "sha256": "389b333000a989e70e24df21e24b7735c6ff152204ea0d3ef5073125506f7075"
+    },
+    {
+      "path": "docs/ADMIN_WEBUI_V1.3.0-RC.1.md",
+      "size": 1919,
+      "sha256": "83d969ff8319ebc6ef2987e15a2aa00c1c621df50f733705efde873ff52d215e"
+    },
+    {
+      "path": "docs/AMIS_PROFILE.md",
+      "size": 2089,
+      "sha256": "ac674cf412465f2e58c3231fc4e8d3e0a7a6d087c2fdb1d28bdac6486a466040"
+    },
+    {
+      "path": "docs/API_OBSERVATIONS.md",
+      "size": 6038,
+      "sha256": "1eb5abc620519abf0a4665d1cfd81272513d4ec376309f15046653213eaacf59"
+    },
+    {
+      "path": "docs/AUDIT_REPORT_v1.1.0.md",
+      "size": 7392,
+      "sha256": "45bc1f3ee099cf53054c3e152e3ed786dc4b37ff6ead8a21b348d63f8db11740"
+    },
+    {
+      "path": "docs/CLA1_REVIEW_v1.2.1.md",
+      "size": 3051,
+      "sha256": "9c207e08101d5dc69772adfe5a2dd15965923172452559635d544eecb32c69e9"
+    },
+    {
+      "path": "docs/DEPLOY_ADMIN_WEBUI_VM300.md",
+      "size": 2358,
+      "sha256": "31200b82294c5923a4601980b8665abb347c962efa5f80ff5288d7e55dac4db7"
+    },
+    {
+      "path": "docs/DEPLOY_PORTAINER_VM300_v1.3.0-rc.1_VIE.md",
+      "size": 7378,
+      "sha256": "b90f694052579f0d70fc92a3bc538afdec6fc2d8c06d451f365dc14f45b44fb4"
+    },
+    {
+      "path": "docs/DEPLOYMENT_GUIDE.md",
+      "size": 6941,
+      "sha256": "2254e0c69c861e6e4cef75229fae222dbeb4e6e7cb82902811b7b1636574a7f3"
+    },
+    {
+      "path": "docs/DEVELOPER_GUIDE.md",
+      "size": 8312,
+      "sha256": "24d28d47356ebb4efe6ae52d01ffaaba9a4d1d9df314f418b82ef46c1f544331"
+    },
+    {
+      "path": "docs/DOCKER_PORTAINER_VM300_v1.2.1-r12.md",
+      "size": 7445,
+      "sha256": "24ff5d830c012c42955079d5448a0c3b3cdb9fa5871965b9e80716979f340e69"
+    },
+    {
+      "path": "docs/FRONTEND_COLUMN_VISIBILITY_v1.1.0.md",
+      "size": 1481,
+      "sha256": "4eaf042e1c6bf6a9c8a35c95cf4f28fa427e6a62670c7c01a53063303593dba3"
+    },
+    {
+      "path": "docs/FRONTEND_FIX2.md",
+      "size": 2242,
+      "sha256": "65f668a05e9edae21d954776f9c7c5b1463487dcaeb11179e9a1987705814adf"
+    },
+    {
+      "path": "docs/FRONTEND_TOPBAR_SUMMARY_HHDV_VIEWER_v1.1.0.md",
+      "size": 3597,
+      "sha256": "0f5e6c89d05f10aa8f3dee7202c369c4f7d4036aa3dc333149a0105f50980e65"
+    },
+    {
+      "path": "docs/FRONTEND_UX_UI_PHASE1_PHASE2_IMPLEMENTED.md",
+      "size": 3516,
+      "sha256": "c565569454618df0c98e217e9aa5898e7d42dbbc580378653e30d3e3d428be84"
+    },
+    {
+      "path": "docs/HOTFIX_v1.2.1-r5_FINANCIAL_TOTALS.md",
+      "size": 2410,
+      "sha256": "ec098218aa8eebbc060d6a0c174ff539360c70e756d4abc99d8e6f523aeb16a6"
+    },
+    {
+      "path": "docs/HOTFIX_v1.2.1.md",
+      "size": 4854,
+      "sha256": "11dac9270debce6c8dbfd78b5c9f39ea1f92e6ee928d3caa260665c7d9928d12"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_RELATION_INCREMENTAL_SYNC_v1.1.0.md",
+      "size": 3389,
+      "sha256": "2248973e977d167042611037b20ef5308c3da2418a800eee27a66bdd964e6ecb"
+    },
+    {
+      "path": "docs/INCREMENTAL_SYNC_v1.1.0.md",
+      "size": 32499,
+      "sha256": "cfcd9cd98f4d73814af9d8348f6dcde2bf63ab731385a4f620481e4b3cf495d6"
+    },
+    {
+      "path": "docs/INFORMATION_REQUIRED_v1.1.0.md",
+      "size": 2757,
+      "sha256": "89f6a5c402c08786e13b37ea2a8770ce9464bcd3790451a7ef09e1367905a03a"
+    },
+    {
+      "path": "docs/INVOICE_RELATION_POPOVER_DESIGN_SOURCE.md",
+      "size": 34408,
+      "sha256": "fed6d2e04c173f1e68c858de8798da2deb77ef78c6fff38d5f4f5a86d3d290a9"
+    },
+    {
+      "path": "docs/INVOICE_RELATION_POPOVER_IMPLEMENTATION_v1.1.0.md",
+      "size": 4504,
+      "sha256": "ff4280fd063fc0f7a6e5fc895504840838fb4582810a301d31837b3cea857fdd"
+    },
+    {
+      "path": "docs/INVOICE_TABLE_RESPONSIVE_DESIGN_v1.1.0.md",
+      "size": 16294,
+      "sha256": "b68d583c19583ba29170e75b5c23d42b9ccb2dfc54bdf05f2ed3fee314755c97"
+    },
+    {
+      "path": "docs/INVOICE_UI_COMPACT_MOCKUP.html",
+      "size": 7656,
+      "sha256": "75571173d7b51ef6996792390a950f3c7afea7144ebd0e4131337fda006f936c"
+    },
+    {
+      "path": "docs/INVOICE_UI_COMPACT_TOOLBAR_TABLE_FIX_v1.1.0.md",
+      "size": 12780,
+      "sha256": "63cd810757d7438cca197e640bbcef4e695e1134bdf69bdd507e9ce748ab71d2"
+    },
+    {
+      "path": "docs/PRODUCTION_RELEASE_LOCKED_SETTINGS_AND_BACKGROUND_LAUNCH.md",
+      "size": 4866,
+      "sha256": "029e240aab7e2d1b428d937f2370d887f1ad27ec86550c942a1e4e90ce9f2b4a"
+    },
+    {
+      "path": "docs/PUBLIC_DOCKER_DEPLOYMENT_VIE.md",
+      "size": 9982,
+      "sha256": "10b2e18235307b50a319b73fdfd4ae340e7c785c27ca34d420d3bba65b3bf2dc"
+    },
+    {
+      "path": "docs/PUBLIC_DOCKER_DEPLOYMENT.md",
+      "size": 8282,
+      "sha256": "cd60cf483ac8657b47248d5bb0195692ed51f3c7e183bf11d62744db91337318"
+    },
+    {
+      "path": "docs/PUBLIC_WEB_GAP_ANALYSIS.md",
+      "size": 19222,
+      "sha256": "55689590ca3cca0e5efe5c05e4c0b77afa6d347b627f90701820939770c29e13"
+    },
+    {
+      "path": "docs/PUBLIC_WEB_IMPLEMENTATION_NOTES.md",
+      "size": 4559,
+      "sha256": "83bcb5d6cd787f9fc95e163abb74653f4080bdc79aac03bcb6fa12cca442851c"
+    },
+    {
+      "path": "docs/QUERY_AUTO_v1.0.1.md",
+      "size": 4015,
+      "sha256": "e414174d1b5b33a8b1687e754f87dc2c5b08cd2d02cd180b926fd09c4560e519"
+    },
+    {
+      "path": "docs/QUERY_AUTO_v1.1.0.md",
+      "size": 2560,
+      "sha256": "7a53fd7d5366d1762c7602574657728480db4fd16c84b1afb4a07ea3158f1451"
+    },
+    {
+      "path": "docs/RELATION_DRIVEN_INCREMENTAL_SYNC_v1.1.0.md",
+      "size": 32499,
+      "sha256": "cfcd9cd98f4d73814af9d8348f6dcde2bf63ab731385a4f620481e4b3cf495d6"
+    },
+    {
+      "path": "docs/RELEASE_CANDIDATE_ACCEPTANCE.md",
+      "size": 1586,
+      "sha256": "8776d8f43ef820d3c05d5ff19c1e5441d3a4dd19344b2a741660645d04fa701c"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v1.3.0-rc.2.md",
+      "size": 3087,
+      "sha256": "7ce7b7a8cc5a23281666ab6a33b01ce6816ef1a05d7eb58efdd25c44b3e14511"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v1.3.1.md",
+      "size": 1865,
+      "sha256": "1b148b910067ff1f045616d058c62cd883ae26f22137be5605cc7335f82bd374"
+    },
+    {
+      "path": "docs/RUN_GUIDE_v1.1.0.md",
+      "size": 4078,
+      "sha256": "e98de221f540b46536b07f98b878ac708f731831ef0d409da3abdef373227565"
+    },
+    {
+      "path": "docs/SECURITY_AUDIT.md",
+      "size": 6146,
+      "sha256": "0a3201cc7c6f149926dce11606267e0906c51e2e0a7bd59704ba133d7d761a51"
+    },
+    {
+      "path": "docs/source/HDDT_v1.0.0_SPEC.md",
+      "size": 45035,
+      "sha256": "14517809ec45100edd9f2cd4eb3fe1a73218834c3b8c0c8607954ad90625a17c"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.0.1.md",
+      "size": 2623,
+      "sha256": "bd45375114b2f256079022fce1a35c9a8fd7781c02eac2a24b73dc7746e91ac2"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.1.0.md",
+      "size": 4610,
+      "sha256": "5eef043f9ed3b1a3ef5fe0e899f2aef0f171a5fd5f1288d52f9dc6fa7ec2e699"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.0.md",
+      "size": 4984,
+      "sha256": "3f90a0d8a0373452f5c359858da01566a9c8bf1dbaee7d0971596c224c4a383a"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r10.md",
+      "size": 1675,
+      "sha256": "b509db9a7c51d0dec840a4ff675fe0a9b77a0dc7c30d43f8be6b3c15b42bb7fa"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r11.md",
+      "size": 1872,
+      "sha256": "cb9ef7e7f0bd000347fae531b5cb60b23bbc32ac72380e9276a130f90e1b25c2"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r12.md",
+      "size": 1805,
+      "sha256": "b6c4a229e3ef115d91db55c941b9bda15b9bc56e3091d863a51ca223a4c8dc37"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r4.md",
+      "size": 2029,
+      "sha256": "fa2af0b3e04823fb023d7a1ca321d06999d6d9a98f63134431a91e980e4a0d6b"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r5.md",
+      "size": 2569,
+      "sha256": "b030f9dc060d5c5dbcad2e6c6cab847e42a2315967d026d2390794ab3802ecac"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r6.md",
+      "size": 1875,
+      "sha256": "258ba9363998ba8ba0eaa7f71aebf15f6ab2b3e6b33b0b5d5834f717f14b373e"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r7.md",
+      "size": 2919,
+      "sha256": "7fd72b6909c1cff3a81744569bab3715793874563930bb1045bc00227297742e"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r8.md",
+      "size": 1880,
+      "sha256": "3d3af69bc06eb626108cb101edfbfeb123d5d675106508ad0c543af752ef6a4c"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1-r9.md",
+      "size": 2215,
+      "sha256": "c7ec94a339e5013964096ebfa7d1125041fd6820d1e8cb42be48f2e67dd7f537"
+    },
+    {
+      "path": "docs/TEST_REPORT_v1.2.1.md",
+      "size": 8262,
+      "sha256": "72ae4d6067dfe44237646ed0b294c4774b54254692399a1fa041d6f19555d21f"
+    },
+    {
+      "path": "docs/TEST_REPORT.md",
+      "size": 5763,
+      "sha256": "c9032f23d9967c584738e6bc2efde9e93f3d08ba6e8c2a3c7908398635f8eea0"
+    },
+    {
+      "path": "docs/tvan_design/design/HDDT_CONN_THAISON_FULL_TECHNICAL_REPORT.md",
+      "size": 34862,
+      "sha256": "d97c8247fc47ccf6e1150b6cd416c5fbaedb05b602730ca2621573777683960a"
+    },
+    {
+      "path": "docs/tvan_design/design/HDDT_CONN_THAISON_PRESENTATION_DESIGN.md",
+      "size": 20723,
+      "sha256": "d2d0fd948722f33de203854202dcd9ce5116f941e09d97990bd926b9d92714f9"
+    },
+    {
+      "path": "docs/tvan_design/design/MINVOICE_SUPERVISED_PRESENTATION_FLOW_v1.2.1-r9.md",
+      "size": 2075,
+      "sha256": "ea71ba3d977b54d4088fb16b9ed30bb3f197d33e5e70cbb8485735c90c1c0531"
+    },
+    {
+      "path": "docs/tvan_design/design/MISA_PRODUCTION_ROUTE_v1.2.1.md",
+      "size": 792,
+      "sha256": "32bc87be263d580630e10a7da2f94c1698f3a04551014441d98ba4fc9e94d240"
+    },
+    {
+      "path": "docs/tvan_design/design/MISA_SUPERVISED_PRESENTATION_FLOW_v1.2.1-r6.md",
+      "size": 2284,
+      "sha256": "a119baea4e4a3f09342ff4e3425364b0f8afb7dedf1c5c0c19c36a4f21957dfb"
+    },
+    {
+      "path": "docs/tvan_design/design/PRESENTATION_PDF_PROVIDER_ARCHITECTURE.md",
+      "size": 28026,
+      "sha256": "5f2be1c4066df998e646ecdbe0ecb54e9c17ba70a28f5b8efdacd9b013126366"
+    },
+    {
+      "path": "docs/tvan_design/design/SOFTDREAMS_SUPERVISED_DOWNLOAD_FLOW_v1.2.1-r10.md",
+      "size": 2365,
+      "sha256": "4330139d34156848ca58cfe7c56b7e0a06cf426711ed582d80f2c0ae971c7032"
+    },
+    {
+      "path": "docs/tvan_design/design/SOFTDREAMS_SUPERVISED_DOWNLOAD_FLOW_v1.2.1-r11.md",
+      "size": 3044,
+      "sha256": "a15f79f1105247deaae15f86427ecfed9dfc72b27b209da0514560a7f0d710aa"
+    },
+    {
+      "path": "docs/tvan_design/design/THAISON_EINVOICE_CHANGE_INVENTORY_20260928.md",
+      "size": 11183,
+      "sha256": "679e59245345aef25c3a1ee07b3dc853a6d874dc29fc797a5585554fa5844b7c"
+    },
+    {
+      "path": "docs/tvan_design/design/THAISON_EINVOICE_PDF_IMPLEMENTATION.md",
+      "size": 9382,
+      "sha256": "f31003ed1a81ff98ae7cec929b6240630cc5aa1ea10984b82ba2d4885cfbfb69"
+    },
+    {
+      "path": "docs/tvan_design/design/TVAN_CATALOG_DATABASE_DESIGN_v1.3.0-rc.1.md",
+      "size": 41326,
+      "sha256": "963b22e51dbcfa1f45c0d644c4c824af936d672098b1ea3707f019b5699d7175"
+    },
+    {
+      "path": "docs/tvan_design/design/TVAN_CATALOG_PATCH_FILE_LIST_v1.3.0-rc.1.md",
+      "size": 1523,
+      "sha256": "d7b7155b5e2c122215050858b9d443fe81d19ee4098c46be8cb0072b89b38dec"
+    },
+    {
+      "path": "docs/tvan_design/design/TVAN_PDF_v1.2.0.md",
+      "size": 3525,
+      "sha256": "77a4c5d954bea79e6266aec0500f084b498a4e5ec984c5b63cc73960fbdb11cb"
+    },
+    {
+      "path": "docs/tvan_design/design/TVAN_PDF_v1.2.1.md",
+      "size": 7876,
+      "sha256": "c786a006033206ba84fc04bfbd49e7034b4f20cb19aa5e0571f103c89724a539"
+    },
+    {
+      "path": "docs/tvan_design/design/TVAN_SOFTDREAMS_TARGET_DESIGN_v1.3.0-rc.2.md",
+      "size": 7519,
+      "sha256": "b0ba2f47dc98d01264385ff4a5b3db58decb63c5193157ac24863882545c31ef"
+    },
+    {
+      "path": "docs/tvan_design/design/VIETTEL_CAPTCHA_SUPERVISED_PROBE_v1.2.1-r8.md",
+      "size": 2175,
+      "sha256": "72ae81b519b393283fc11cc71bd5f4f710568cfdbbef7edd3e99730bf6307447"
+    },
+    {
+      "path": "docs/tvan_design/design/VIETTEL_SUPERVISED_PRESENTATION_FLOW_v1.2.1-r7.md",
+      "size": 4326,
+      "sha256": "2b67624ff0b5d043b01b76aae65e7904f954d28b57c2fe3e326fa4f511e480e1"
+    },
+    {
+      "path": "docs/tvan_design/README.md",
+      "size": 1874,
+      "sha256": "d4b59e3b4908fae23d49ad1d3ef7bdb60a61293eecdcd1bd6dc6715f1b2e7c2e"
+    },
+    {
+      "path": "docs/tvan_design/SHA256SUMS.txt",
+      "size": 8090,
+      "sha256": "e12df4a344c84d867953a0e99a54143c2994710b0d688b31256dc067c889ef61"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/presentation/manifest.ts",
+      "size": 1855,
+      "sha256": "ff203a0a3e65cdd04c2dace0c397f1715c8dd279d6630f2584d4959fe886957d"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/routes/presentation.routes.ts",
+      "size": 3730,
+      "sha256": "75812d7c1f9c1ba337864203f350be60146754d85fea94edc21f9425a316e601"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/acman.ts",
+      "size": 12684,
+      "sha256": "025823bc51bdc46edc4bd5b21243086f00ff9e904d491c48b4dd11e48f2e8c86"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/ehoadondientu.ts",
+      "size": 15105,
+      "sha256": "b25b877424cec6680e1dca7640589ebc98c36c0d326d91696af3a1c735c8ee46"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/fast-browser.ts",
+      "size": 19265,
+      "sha256": "fba350f82bf64dfcaf03b395724300dc49d7f7d290f496644edd2370bb75d64c"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/fast.ts",
+      "size": 13442,
+      "sha256": "94dc51e26302b5f47b3df319be25dc7e64dbb48df630f49622e4658417171ae0"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/invoice.ts",
+      "size": 9019,
+      "sha256": "c13211f0f954a43fa5d6bbb25e54eda51c05ad86019604396228dbee0605e0d8"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/misa.ts",
+      "size": 20457,
+      "sha256": "1e8054f2f6ffa9d648188ec651e4e6782eed5731ec66969d87e9e9356dd88e1c"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/pvoil.ts",
+      "size": 17122,
+      "sha256": "c83675e9f8d2af262cbd6fb33b117463076a6ef545c9f359a59686dd6cd0b2a6"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/softdreams.ts",
+      "size": 34947,
+      "sha256": "10da52b98f06568fd0e7ac57423b0040da6385b64552a9b4df9e7b1acd5353c4"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/softdreams/representation-renderer.ts",
+      "size": 13304,
+      "sha256": "d28dda1ab097fd03b526278293693cc357a42101ca41afdbb19133b087ea69e3"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/softdreams/search-parser.ts",
+      "size": 11292,
+      "sha256": "db5d3e9d2a466ec41d54881d3fcd06da5050a2b626936cb38e8483a4e6f3bdf5"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/thaison-browser.ts",
+      "size": 27845,
+      "sha256": "831a3261374b7198b00a85f0f8af353b0454e820100aeac40a7ab77f47059f69"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/thaison.ts",
+      "size": 29897,
+      "sha256": "e05bfd1c4c738b0f98718d3c1761caf43bf44188af792609a072e84b09a889f7"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/thaison/artifact.ts",
+      "size": 6197,
+      "sha256": "5048a9e946bf525b614af8d502df493a2cfa7bd291797c2900b1b8cb04f078cf"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/thaison/http.ts",
+      "size": 4558,
+      "sha256": "df98ec9286ea7e756a34a45a7becb0e992d9c5ab0dfbad9ce2f885e4c9977a2e"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/thaison/lookup.ts",
+      "size": 7736,
+      "sha256": "dfacd12b5ab6e6f759f34138cb637148acdf57a87d28240842bd47ac91f01586"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/thaison/parser.ts",
+      "size": 7868,
+      "sha256": "089b6f47c8e958ca6c9c77edef4d7e13395a0dc035c6a239ddb01c668e84a9b3"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/viettel.ts",
+      "size": 32294,
+      "sha256": "ae7e9d8bbcea92eba211ac9e0238e91dbde9f150edebdbe3d1fecbc06b73b2e5"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/adapters/vnpt.ts",
+      "size": 24921,
+      "sha256": "761a01ab8db8a8db5e69e3729ef5f8351c8c87bfcca313301bf529b4fbe6216c"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/backport.service.ts",
+      "size": 8390,
+      "sha256": "f2aed8cf5257766cfccdfc40d182c7f76ccc44db85602fbbad08524599f212ac"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/extract.ts",
+      "size": 2793,
+      "sha256": "1b3eec8fbdb1f3ff2d366bf929877272d638e04fa76bbf359aef7bee49dabecb"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/http.ts",
+      "size": 5040,
+      "sha256": "4f1ae28881e2e96bb23ed1cc5f36ab0690b4e1b7b512c63348e5b3d63cd61f40"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/pdf.service.ts",
+      "size": 32191,
+      "sha256": "87ce9f50d06f81e2f360751a71b8beb122b149269892f5d3c64754736bd68fb3"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/registry.ts",
+      "size": 2615,
+      "sha256": "4de85a98e6bab71e16e57f3066e3016692308b63369741927b8d05c9dd63f4af"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/server/tvan/types.ts",
+      "size": 3560,
+      "sha256": "6546cc0f502cebd976725c409bea1e9afffe6fd8b684ce87f12cf0af78d43ee2"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/shared/lookup/index.ts",
+      "size": 3349,
+      "sha256": "1f4224fa7113305557c6e3fae0a585eeb7c7d5cfef09a0b95973d61a541d4cc5"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/shared/models/index.ts",
+      "size": 19204,
+      "sha256": "2fe8e046abbe08591587614352e0740bb496cdef45a2e7658e61c8254b5e9bb3"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/shared/provider-research.ts",
+      "size": 9992,
+      "sha256": "914a04f9f579202ba318c95aca022d4f2f61050d95858230e7cb740ce3578cba"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/shared/provider-resolution.ts",
+      "size": 2165,
+      "sha256": "04c02730fd0bb1ba12adbb51db56e4746a23b79bd81e1da51817f1805f4f33f0"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/shared/tvan-catalog/index.ts",
+      "size": 15225,
+      "sha256": "5b66af51abd9bae7d9f0a1d3e95f39b54bf4f573fd7c2511c328e4b0618bd1bf"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/web/api/client.ts",
+      "size": 15772,
+      "sha256": "c1c5d1ea966e09ff2440ce7aeae989224292ecbcecb15dca74b83c517b4ad56e"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/web/components/InvoiceProviderResearchPanel.tsx",
+      "size": 32725,
+      "sha256": "0313518d0b8828026dd55daf7216c2ccf672ce422172db406723555032029b92"
+    },
+    {
+      "path": "docs/tvan_design/source/runtime/src/web/pages/InvoicePage.tsx",
+      "size": 120863,
+      "sha256": "07087a02ac5a1276e3e6151c27a1ff1449cf392a23f933f0e2a6c43206533b59"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/integration/ehoadondientu-flow.test.ts",
+      "size": 8598,
+      "sha256": "1c26568ab02e3c2d3a41b9ede2a507dc2671615639f8056c12b4dfecc34c61f0"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/integration/public-session-isolation.test.ts",
+      "size": 4178,
+      "sha256": "e269af3d4617ac48c5c327dc3d1683763804493f0112da3591e30d104899ffe2"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/integration/thaison-flow.test.ts",
+      "size": 5721,
+      "sha256": "eb4fc3b422bd8b8dfbf13eb59017b4c741c3c652790733a92a01cb9490fa2748"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/integration/tvan-artifact-api.test.ts",
+      "size": 12802,
+      "sha256": "72cf203d315d572c3bd7620d3a6c6be82f0c03be7aea61fd307f544f9b4e9c47"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/acman.test.ts",
+      "size": 1586,
+      "sha256": "cecbd0c103e1292734b8f0434828342ea9a56b3495a70fee2827bd5913ad2557"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/dynamic-lookup.test.ts",
+      "size": 4392,
+      "sha256": "6c850ca8bdcc585f0f88884739ce0661424ee7a23a78cbad52e4851f959f8bed"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/ehoadondientu.test.ts",
+      "size": 11399,
+      "sha256": "e0905542329d48b7f8f74571046d87e85d512a9d360dce7b2bcf99f1727d8441"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/fast.test.ts",
+      "size": 13986,
+      "sha256": "87e521dfc5a6437312f559203154c8f43473f2abc639305c184fa2200e3ba530"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/provider-research.test.ts",
+      "size": 4136,
+      "sha256": "a4fe2d61a7a3fb95f58e95a5d9fac32f190f5b8d40b93bdac7e2bf824d92f65f"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/pvoil.test.ts",
+      "size": 6734,
+      "sha256": "db31cd17ba38d785c98b3adadb828670fe3329d5dafef6cad1682fba19ba503c"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/softdreams-renderer.test.ts",
+      "size": 2429,
+      "sha256": "76b4d52004d7493454b4cc6abccfd10fa9ce2763639619c981df43361eb31cd1"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/softdreams-search-parser.test.ts",
+      "size": 4163,
+      "sha256": "a7d76c9d028fd37d9ff952bca96929faa2df0687a14475d373fd4a86bff8ecda"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/solution-provider.test.ts",
+      "size": 1712,
+      "sha256": "d50ed3d86380d96eda1a69c760a43ddf3ee6663ed0e67133b633f91c23a3b947"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/thaison-artifact.test.ts",
+      "size": 2786,
+      "sha256": "b0a66badeb6470681e3e36dd113d4921ba2164b58bc8f5eff24e0aea50c1c32e"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/thaison-parser.test.ts",
+      "size": 2978,
+      "sha256": "318d0a7b0d613ea8f0afeb04394bd76bac54afafaa0b303f2e5765e7b1a7eca1"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/thaison.test.ts",
+      "size": 27229,
+      "sha256": "db2bcd63ad1c7e67088fa822713bd3338ae3dbd9e9fb7eab463a6f03472cc379"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/tvan-artifact-cache.test.ts",
+      "size": 3090,
+      "sha256": "e6afd06c0cef5759352cc578766a3392c858937b91ab27cc42be3e57c5161b2f"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/tvan-catalog.test.ts",
+      "size": 4676,
+      "sha256": "80ca02d9038e374a401ffa6f27ab498ff827631e55bc38cbaaa5391242edcc27"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/tvan.test.ts",
+      "size": 52660,
+      "sha256": "1c9ee7236a66cf566ba665ed1a485791d972440b60a8eb31a3bc3e7bc29bdfa6"
+    },
+    {
+      "path": "docs/tvan_design/source/tests/unit/vnpt.test.ts",
+      "size": 10008,
+      "sha256": "917c04c8101d0bcf5ab20b280cf05c891c715d7fcbceeeb977cc37d7a5bdd402"
+    },
+    {
+      "path": "docs/USER_GUIDE.md",
+      "size": 6903,
+      "sha256": "ec96fd5551d0e7ccd0635f9f93feac9c7d816891937b12fc8a954e7a1ec8862e"
+    },
+    {
+      "path": "HDDT-Tray.ps1",
+      "size": 9746,
+      "sha256": "78e35c913d2dff0ce37a51b518a2f91500770745864fde2dde675a42dfd3edbb"
+    },
+    {
+      "path": "LICENSE.txt",
+      "size": 203,
+      "sha256": "0e2cc3211248f806860451d267e92968f0ea622b4f0546fcda197916adb7224c"
+    },
+    {
+      "path": "package.json",
+      "size": 2187,
+      "sha256": "5d0cbb5e71cf7682816870019394143d67116106820c8a4715d2c89058cc5045"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "size": 108872,
+      "sha256": "915cb3ba711f89791468b1009889cbb5e3d556b0bdc88364186728e7c05cedbd"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "size": 59,
+      "sha256": "3f1a46ec719b4cbd16f682e7596e60cbabf9d61e6ef890ed63bb11c1cc5a624e"
+    },
+    {
+      "path": "public/branding/hddt_conn_avatar_corporate.svg",
+      "size": 2061,
+      "sha256": "3a483afa51f59ef48286e5f2666bdcb39f40b27c93419ed1973e7242da66d6bc"
+    },
+    {
+      "path": "public/branding/hddt_conn_favicon.svg",
+      "size": 851,
+      "sha256": "06ac0eb36cb31284bde22d08b740a87e0293c17dcec790131a71a41b06be41d6"
+    },
+    {
+      "path": "public/branding/hddt_conn_icon_app_1024.svg",
+      "size": 1662,
+      "sha256": "9f36df23b89805f5f7a4daabe742421960c6afe640210469d500cd17cd615884"
+    },
+    {
+      "path": "public/branding/hddt_conn_web_logo_horizontal.svg",
+      "size": 1729,
+      "sha256": "e94be335a736fb94277cb649d333c17332213bb7bbfa167c4f88a769ce79169c"
+    },
+    {
+      "path": "public/invoice-svgrepo-com.svg",
+      "size": 2666,
+      "sha256": "97f3cd150166de52c39bb6bc2faa73691db08c06b5b845720c52cd5e94116dbd"
+    },
+    {
+      "path": "README_FIRST.txt",
+      "size": 2824,
+      "sha256": "6588d26ba115b3ae86aef5c29a94da3644d6f083275ed44e90cb1f595abda724"
+    },
+    {
+      "path": "README_PUBLIC.md",
+      "size": 947,
+      "sha256": "3a4be782f9278b758e1fc6512dbb7fae2d1565b7893628c986bb8466a1baaa0b"
+    },
+    {
+      "path": "README_TRAY_VISIBLE_THEN_HIDE.txt",
+      "size": 1196,
+      "sha256": "589a1388ffd4c1f887714794f9f1d308583b8fde14e0b4fd94020ce99a939579"
+    },
+    {
+      "path": "README_TRAY_WINDOWS.txt",
+      "size": 1149,
+      "sha256": "e50c3401895b2b534c9de0ef22c94a1c1097299d17ae2ecf937ed6d199410511"
+    },
+    {
+      "path": "README_TVAN_MISA_CSRF_HOTFIX_2026-09-18.txt",
+      "size": 1814,
+      "sha256": "4c2667efe20b8a3fcedfb0543b860fbdab10c67f76eac72e36a6b366d25c3a29"
+    },
+    {
+      "path": "scripts/check-scripts.mjs",
+      "size": 507,
+      "sha256": "ef801bc29d3750d80f6dc5c7bfcb589457814011c25e7eaaa3a9e43d1a6d923b"
+    },
+    {
+      "path": "scripts/clean.mjs",
+      "size": 385,
+      "sha256": "252689cceb091f2577a0a9ca4950d72303649bd3b0b2c11b1d11bdd53fecfc40"
+    },
+    {
+      "path": "scripts/dev-8288.mjs",
+      "size": 655,
+      "sha256": "5f083c81a3f4a5823039790e4b54f875d98be98c3eab476fa51f7ceaa76c47d9"
+    },
+    {
+      "path": "scripts/dev.mjs",
+      "size": 1200,
+      "sha256": "08e80dd6385b38d26e54f409ac2e394bf6d344ac136c86aa03abecd74bf5ffad"
+    },
+    {
+      "path": "scripts/macos-launcher.applescript",
+      "size": 273,
+      "sha256": "5e38ffbded2e1daa7ac9ddbca0d3623e3615509d48d6d781755c9b0e39ce36bf"
+    },
+    {
+      "path": "scripts/package-portable.mjs",
+      "size": 10547,
+      "sha256": "ce14d97ff13684ca931dbd12a761747c05b12072aaf9c8c1aab29d37c18bcdb2"
+    },
+    {
+      "path": "scripts/package-source.mjs",
+      "size": 4333,
+      "sha256": "7a4e3ea23d5c8ea018efe6c0360b0fb603d578e9deba4c76f87e54f6d8556c31"
+    },
+    {
+      "path": "scripts/smoke-test.mjs",
+      "size": 3733,
+      "sha256": "c14b283159166ba345e054f9cda8d90a25556ea0528cb4af9b53383ab60d87a0"
+    },
+    {
+      "path": "scripts/start.mjs",
+      "size": 1240,
+      "sha256": "78e29c7bdc7d1eec834ac1f1d29bc81453e646b21e2ea63182766ec6bf797403"
+    },
+    {
+      "path": "scripts/windows-launcher.cs",
+      "size": 1243,
+      "sha256": "4af1f60120b66e0e00dc3482722c6d6d9859d2f3a58a5cfac2b0bfe47fbc6e8c"
+    },
+    {
+      "path": "src/server/app.ts",
+      "size": 12941,
+      "sha256": "6f29c08686b375d237af37387d8c7f06fc83f7885b215c988ef66a3926627a0f"
+    },
+    {
+      "path": "src/server/export/excel-report.ts",
+      "size": 7498,
+      "sha256": "511dbfbee59e71f4fbd2a7fe8bd7d97760270fcd1291dab276a7f4b1cade6958"
+    },
+    {
+      "path": "src/server/export/profile-engine.ts",
+      "size": 7296,
+      "sha256": "c0601898df1931ad199c9b404605468ec6d257935d5dc6c76df785580b3161e1"
+    },
+    {
+      "path": "src/server/gdt/connector.ts",
+      "size": 25203,
+      "sha256": "dbbd490487dc14f8a9550bbc2991c30143ae9541071cd4c9c69d060658d0d6b1"
+    },
+    {
+      "path": "src/server/gdt/connector.ts.backup",
+      "size": 25586,
+      "sha256": "c43f0967d69fc5dfb524eabf682fc84db4526b07834b88487f5c9bf5c5321b37"
+    },
+    {
+      "path": "src/server/gdt/zip.ts",
+      "size": 5167,
+      "sha256": "4d317510ea21e4a4c24e89376550d61ad9b8199fe7bddee124d4dd2162cc2437"
+    },
+    {
+      "path": "src/server/index.ts",
+      "size": 6233,
+      "sha256": "7c13418eea7ef2cc1fd00e634f4dc8987e8981b1b7396302a2db0bbf15bf5702"
+    },
+    {
+      "path": "src/server/presentation/manifest.ts",
+      "size": 1855,
+      "sha256": "ff203a0a3e65cdd04c2dace0c397f1715c8dd279d6630f2584d4959fe886957d"
+    },
+    {
+      "path": "src/server/routes/admin.routes.ts",
+      "size": 4940,
+      "sha256": "21d7b4e0430ce98f4ef502f9847798cd84873b624113b688321bdec139392005"
+    },
+    {
+      "path": "src/server/routes/auth.routes.ts",
+      "size": 2536,
+      "sha256": "880b45dd82714903b7ad9aff13580dbb6aeb76cef6f3af00b65482f7316e17d6"
+    },
+    {
+      "path": "src/server/routes/dataset.routes.ts",
+      "size": 1416,
+      "sha256": "6be61250dbd334a34b5ccea7ad8acf7ed0364e15860755ceb8699266266d7108"
+    },
+    {
+      "path": "src/server/routes/download.routes.ts",
+      "size": 2990,
+      "sha256": "d7c2b83eef97fc8545898e0a9bb45906c607f4365e38ff063e63f8124fe12c21"
+    },
+    {
+      "path": "src/server/routes/export.routes.ts",
+      "size": 3087,
+      "sha256": "a673296ec8ccda0a46ea2a9cbefd63bf4bb9dd0fa855e1ecd7ef33ab098187c6"
+    },
+    {
+      "path": "src/server/routes/invoice.routes.ts",
+      "size": 7172,
+      "sha256": "2214c37d1fa2b672861cda26bf1069030c703f89c61b9d68beb8790b4ed6a053"
+    },
+    {
+      "path": "src/server/routes/presentation.routes.ts",
+      "size": 3730,
+      "sha256": "75812d7c1f9c1ba337864203f350be60146754d85fea94edc21f9425a316e601"
+    },
+    {
+      "path": "src/server/routes/settings.routes.ts",
+      "size": 873,
+      "sha256": "b870619f9f503673367d94cfa569675719d942989e3a50d617a4b3e4d6449df5"
+    },
+    {
+      "path": "src/server/routes/tvan.routes.ts",
+      "size": 7716,
+      "sha256": "0d062ad8ae56ec9bac92336108dd5581732fdefeb0b9b2f0eeebef920d1fbc7b"
+    },
+    {
+      "path": "src/server/services/dataset.service.ts",
+      "size": 7321,
+      "sha256": "af62596284148851ab0e5826fb815119805fda6623651ab277bec2f3d38356c6"
+    },
+    {
+      "path": "src/server/services/download.service.ts",
+      "size": 13820,
+      "sha256": "702ab72f276754c66c3b841088d14e86cd328a0f536ab941d10d2567ccc9fc26"
+    },
+    {
+      "path": "src/server/services/invoice-query.service.ts",
+      "size": 16584,
+      "sha256": "ff2b1893b8aa0adcfae7a37b6270193dfecf2bdae0260f8e1993f2b39b1e41e2"
+    },
+    {
+      "path": "src/server/services/session-registry.service.ts",
+      "size": 9347,
+      "sha256": "858c113a3b8e2debf099a9be375a1f9b904c649d85f79e7193927c67bf71c344"
+    },
+    {
+      "path": "src/server/services/session.service.ts",
+      "size": 1457,
+      "sha256": "33fd2862b232dfc56f723bc4846c1ef5406605c2bfd213cb71e919f7b1c7775c"
+    },
+    {
+      "path": "src/server/services/settings.service.ts",
+      "size": 9493,
+      "sha256": "693d785f715a8daa3d3578d3a741c727e2ee889f6a9c2fed6e46ed961f014d22"
+    },
+    {
+      "path": "src/server/services/tvan-catalog-db.service.ts",
+      "size": 26435,
+      "sha256": "cd7140f988fbd8aec067f2ff109947476940addb7cfdeb541b2cd5576439039e"
+    },
+    {
+      "path": "src/server/services/tvan-catalog.service.ts",
+      "size": 5265,
+      "sha256": "ef55af6780f24d2383b4a8671a0ef6ad331c2bcdec427aa136d7527ffafd1a0e"
+    },
+    {
+      "path": "src/server/tvan/adapters/acman.ts",
+      "size": 12684,
+      "sha256": "025823bc51bdc46edc4bd5b21243086f00ff9e904d491c48b4dd11e48f2e8c86"
+    },
+    {
+      "path": "src/server/tvan/adapters/ehoadondientu.ts",
+      "size": 15105,
+      "sha256": "b25b877424cec6680e1dca7640589ebc98c36c0d326d91696af3a1c735c8ee46"
+    },
+    {
+      "path": "src/server/tvan/adapters/fast-browser.ts",
+      "size": 19265,
+      "sha256": "fba350f82bf64dfcaf03b395724300dc49d7f7d290f496644edd2370bb75d64c"
+    },
+    {
+      "path": "src/server/tvan/adapters/fast.ts",
+      "size": 13442,
+      "sha256": "94dc51e26302b5f47b3df319be25dc7e64dbb48df630f49622e4658417171ae0"
+    },
+    {
+      "path": "src/server/tvan/adapters/invoice.ts",
+      "size": 9019,
+      "sha256": "c13211f0f954a43fa5d6bbb25e54eda51c05ad86019604396228dbee0605e0d8"
+    },
+    {
+      "path": "src/server/tvan/adapters/misa.ts",
+      "size": 20457,
+      "sha256": "1e8054f2f6ffa9d648188ec651e4e6782eed5731ec66969d87e9e9356dd88e1c"
+    },
+    {
+      "path": "src/server/tvan/adapters/pvoil.ts",
+      "size": 17122,
+      "sha256": "c83675e9f8d2af262cbd6fb33b117463076a6ef545c9f359a59686dd6cd0b2a6"
+    },
+    {
+      "path": "src/server/tvan/adapters/softdreams.ts",
+      "size": 34947,
+      "sha256": "10da52b98f06568fd0e7ac57423b0040da6385b64552a9b4df9e7b1acd5353c4"
+    },
+    {
+      "path": "src/server/tvan/adapters/softdreams/representation-renderer.ts",
+      "size": 13304,
+      "sha256": "d28dda1ab097fd03b526278293693cc357a42101ca41afdbb19133b087ea69e3"
+    },
+    {
+      "path": "src/server/tvan/adapters/softdreams/search-parser.ts",
+      "size": 11292,
+      "sha256": "db5d3e9d2a466ec41d54881d3fcd06da5050a2b626936cb38e8483a4e6f3bdf5"
+    },
+    {
+      "path": "src/server/tvan/adapters/thaison-browser.ts",
+      "size": 27845,
+      "sha256": "831a3261374b7198b00a85f0f8af353b0454e820100aeac40a7ab77f47059f69"
+    },
+    {
+      "path": "src/server/tvan/adapters/thaison.ts",
+      "size": 29897,
+      "sha256": "e05bfd1c4c738b0f98718d3c1761caf43bf44188af792609a072e84b09a889f7"
+    },
+    {
+      "path": "src/server/tvan/adapters/thaison/artifact.ts",
+      "size": 6197,
+      "sha256": "5048a9e946bf525b614af8d502df493a2cfa7bd291797c2900b1b8cb04f078cf"
+    },
+    {
+      "path": "src/server/tvan/adapters/thaison/http.ts",
+      "size": 4558,
+      "sha256": "df98ec9286ea7e756a34a45a7becb0e992d9c5ab0dfbad9ce2f885e4c9977a2e"
+    },
+    {
+      "path": "src/server/tvan/adapters/thaison/lookup.ts",
+      "size": 7736,
+      "sha256": "dfacd12b5ab6e6f759f34138cb637148acdf57a87d28240842bd47ac91f01586"
+    },
+    {
+      "path": "src/server/tvan/adapters/thaison/parser.ts",
+      "size": 7868,
+      "sha256": "089b6f47c8e958ca6c9c77edef4d7e13395a0dc035c6a239ddb01c668e84a9b3"
+    },
+    {
+      "path": "src/server/tvan/adapters/viettel.ts",
+      "size": 32294,
+      "sha256": "ae7e9d8bbcea92eba211ac9e0238e91dbde9f150edebdbe3d1fecbc06b73b2e5"
+    },
+    {
+      "path": "src/server/tvan/adapters/vnpt.ts",
+      "size": 24921,
+      "sha256": "761a01ab8db8a8db5e69e3729ef5f8351c8c87bfcca313301bf529b4fbe6216c"
+    },
+    {
+      "path": "src/server/tvan/backport.service.ts",
+      "size": 8390,
+      "sha256": "f2aed8cf5257766cfccdfc40d182c7f76ccc44db85602fbbad08524599f212ac"
+    },
+    {
+      "path": "src/server/tvan/extract.ts",
+      "size": 2793,
+      "sha256": "1b3eec8fbdb1f3ff2d366bf929877272d638e04fa76bbf359aef7bee49dabecb"
+    },
+    {
+      "path": "src/server/tvan/http.ts",
+      "size": 5040,
+      "sha256": "4f1ae28881e2e96bb23ed1cc5f36ab0690b4e1b7b512c63348e5b3d63cd61f40"
+    },
+    {
+      "path": "src/server/tvan/pdf.service.ts",
+      "size": 32191,
+      "sha256": "87ce9f50d06f81e2f360751a71b8beb122b149269892f5d3c64754736bd68fb3"
+    },
+    {
+      "path": "src/server/tvan/registry.ts",
+      "size": 2615,
+      "sha256": "4de85a98e6bab71e16e57f3066e3016692308b63369741927b8d05c9dd63f4af"
+    },
+    {
+      "path": "src/server/tvan/types.ts",
+      "size": 3560,
+      "sha256": "6546cc0f502cebd976725c409bea1e9afffe6fd8b684ce87f12cf0af78d43ee2"
+    },
+    {
+      "path": "src/shared/dynamic-fields/index.ts",
+      "size": 3502,
+      "sha256": "e17043f77ae2340c788f0cbbaf180cdb3d31c203768759daf3cd7fd040b4a5c3"
+    },
+    {
+      "path": "src/shared/filenames/index.ts",
+      "size": 3569,
+      "sha256": "3030dd10604be66c8fb3c13a30515eef94db6f941e2f93afe511c0d7f4ae5936"
+    },
+    {
+      "path": "src/shared/incremental-sync/index.ts",
+      "size": 7441,
+      "sha256": "bd082ce0054930703580f1283f973c3bf0e0459feb3b6b038d420e3f9ecc23b9"
+    },
+    {
+      "path": "src/shared/invoice-relations/index.ts",
+      "size": 151,
+      "sha256": "f0ac48f4385343a1a7939907c4653b8efc3e8bc1727bd0760cd41e45fdc0af60"
+    },
+    {
+      "path": "src/shared/invoice-relations/keys.ts",
+      "size": 1509,
+      "sha256": "b060c9a2219996fdac2c646eeaf4e5b9b455d9b4494dd341463632bea5d8b564"
+    },
+    {
+      "path": "src/shared/invoice-relations/normalize-relation.ts",
+      "size": 1640,
+      "sha256": "af61bdec33b134dd94f86f915bdb12d983de18114b3e67455a14e6e59238ca21"
+    },
+    {
+      "path": "src/shared/invoice-relations/relation-index.ts",
+      "size": 2316,
+      "sha256": "6d33f5d703db379f89fc2385d2895f41bc5ff0dd78c01674326e5c818c206eff"
+    },
+    {
+      "path": "src/shared/invoice-relations/relation-view-model.ts",
+      "size": 5417,
+      "sha256": "d0f79aa13533e601356cfc61fd886890b786b38c2862c886719d4c7329cd1f69"
+    },
+    {
+      "path": "src/shared/lookup/index.ts",
+      "size": 3349,
+      "sha256": "1f4224fa7113305557c6e3fae0a585eeb7c7d5cfef09a0b95973d61a541d4cc5"
+    },
+    {
+      "path": "src/shared/models/index.ts",
+      "size": 19204,
+      "sha256": "2fe8e046abbe08591587614352e0740bb496cdef45a2e7658e61c8254b5e9bb3"
+    },
+    {
+      "path": "src/shared/normalizer/financial-amounts.ts",
+      "size": 8397,
+      "sha256": "96c15d79ef3f5e16b49476a62c4e7bf78fc288929561a08db0e1a3bca48b533f"
+    },
+    {
+      "path": "src/shared/normalizer/index.ts",
+      "size": 11956,
+      "sha256": "baebf93beffc3defdfec80c0e6f704d7fa9489215d32fb223bb33bad5e874163"
+    },
+    {
+      "path": "src/shared/provider-research.ts",
+      "size": 9992,
+      "sha256": "914a04f9f579202ba318c95aca022d4f2f61050d95858230e7cb740ce3578cba"
+    },
+    {
+      "path": "src/shared/provider-resolution.ts",
+      "size": 2165,
+      "sha256": "04c02730fd0bb1ba12adbb51db56e4746a23b79bd81e1da51817f1805f4f33f0"
+    },
+    {
+      "path": "src/shared/release-config.ts",
+      "size": 1226,
+      "sha256": "6e77d10e2949fb1c328dec7eb0b90fbd0155d9c8bd707a79348619b0a5c514f3"
+    },
+    {
+      "path": "src/shared/schemas/index.ts",
+      "size": 7543,
+      "sha256": "3844e7295262ca98c66a0f3561ea8bcbd8bc87c107d8a192b046eabe59d46df0"
+    },
+    {
+      "path": "src/shared/solution-provider.ts",
+      "size": 2052,
+      "sha256": "4299092f5cabb0e840367ab2956032cc364562c999b121385dbb35837a7b6576"
+    },
+    {
+      "path": "src/shared/tvan-catalog/index.ts",
+      "size": 15225,
+      "sha256": "5b66af51abd9bae7d9f0a1d3e95f39b54bf4f573fd7c2511c328e4b0618bd1bf"
+    },
+    {
+      "path": "src/shared/utils/date-utils.ts",
+      "size": 2803,
+      "sha256": "505fa57e681a095a1d91e804cbfcd2e68e659ff402e32cb363e87b324f533c38"
+    },
+    {
+      "path": "src/shared/utils/index.ts",
+      "size": 4809,
+      "sha256": "1083b2f94605c2deb8ef898e83c723679348519722f25e87fd52c8e920376c9d"
+    },
+    {
+      "path": "src/web/api/client.ts",
+      "size": 15772,
+      "sha256": "c1c5d1ea966e09ff2440ce7aeae989224292ecbcecb15dca74b83c517b4ad56e"
+    },
+    {
+      "path": "src/web/api/client.ts.backup",
+      "size": 10277,
+      "sha256": "0f998cce6b179991784e6be5a27dd9b586ed97f1e21c3623dc30d6213c8db083"
+    },
+    {
+      "path": "src/web/App.tsx",
+      "size": 14083,
+      "sha256": "e4c07ddd52b8fa3a754e91525a437880d27759a0629f0e79923e3a352c612265"
+    },
+    {
+      "path": "src/web/components/EhoadonDientuPresentationCard.tsx",
+      "size": 4622,
+      "sha256": "0b0f848818803bf496ee6a847b91dd7a51249ffeb623a82cd4a644f4121d0bb3"
+    },
+    {
+      "path": "src/web/components/InvoiceProviderResearchPanel.tsx",
+      "size": 32725,
+      "sha256": "0313518d0b8828026dd55daf7216c2ccf672ce422172db406723555032029b92"
+    },
+    {
+      "path": "src/web/components/invoices/InvoiceLinesModal.tsx",
+      "size": 6451,
+      "sha256": "7c79242b89d5e6071fc122b9f6d93a201af096c0d7aa004a146676f0837b744c"
+    },
+    {
+      "path": "src/web/components/invoices/InvoiceRelationContent.tsx",
+      "size": 4200,
+      "sha256": "43a5b30a2bbe99d4582bf6cc417cbe8dcfe2f163335093cbb4dbc9f89242dc2d"
+    },
+    {
+      "path": "src/web/components/invoices/InvoiceRelationPopover.tsx",
+      "size": 2772,
+      "sha256": "c32a25ee5aea6d45b3a0a838164f120e4a687896b0717a9a6e1368ec1be11837"
+    },
+    {
+      "path": "src/web/components/invoices/InvoiceSummaryBar.tsx",
+      "size": 4934,
+      "sha256": "c1c3d62c39091f2dc26dbf7fa0478abdd64eac837688c5f01c53430751166729"
+    },
+    {
+      "path": "src/web/components/RawInvoiceJsonPanel.tsx",
+      "size": 2225,
+      "sha256": "1c98b3e20276d55a4dfe56958931398fa06dbb25d012e761cda2ff9ef22b9312"
+    },
+    {
+      "path": "src/web/components/TvanArtifactCard.tsx",
+      "size": 11148,
+      "sha256": "1c56663525297f24a3c8c43847bf628b31087891afc0a78dc83a08b3e5c3dc0e"
+    },
+    {
+      "path": "src/web/index.html",
+      "size": 389,
+      "sha256": "3f29d95d0d34595ca8d5ae409665ac6e51048e0c24aedbf95a8fde1f3e7b6a2c"
+    },
+    {
+      "path": "src/web/invoice-page.css",
+      "size": 45237,
+      "sha256": "23358fda6c281cdada92815ecd5de9697a511461929c15cc2ed404914234383e"
+    },
+    {
+      "path": "src/web/main.tsx",
+      "size": 756,
+      "sha256": "58f73e3bf6d9f1b7de71a1e36ed119e21a16aa86bf11da609b947615eeab4d48"
+    },
+    {
+      "path": "src/web/pages/AccountingExportPage.tsx",
+      "size": 10006,
+      "sha256": "0a33bb46a1712d4b750e0080c9034f9f69add2896955a626df3f13a4d52424d8"
+    },
+    {
+      "path": "src/web/pages/AdminPage.tsx",
+      "size": 25785,
+      "sha256": "5a5cb19bcb4d0874e343df212c8fbaedaf1ad03b61da089424008d7e706a0c32"
+    },
+    {
+      "path": "src/web/pages/DownloadPage.tsx",
+      "size": 3436,
+      "sha256": "72b54e566c02dba2ac0410ea07dd50d0e5d1f68ec274851751f76885122b2317"
+    },
+    {
+      "path": "src/web/pages/invoice-filters.ts",
+      "size": 2509,
+      "sha256": "53d8f31e1fc64be61fe8c37bf393cd1e71c6d57cc4f32ebb0f49970192d4ccfd"
+    },
+    {
+      "path": "src/web/pages/invoice-table-layout.ts",
+      "size": 9642,
+      "sha256": "1a10f14c93bd364649487048835d55f0e0ddf2d43fef5a4d838a796f03e860b5"
+    },
+    {
+      "path": "src/web/pages/invoice-ui-preferences.ts",
+      "size": 5654,
+      "sha256": "c25865cecddcbf6e818736c22cd065f9b132515dbb160d94f7357141ca0db8d2"
+    },
+    {
+      "path": "src/web/pages/InvoicePage.tsx",
+      "size": 120863,
+      "sha256": "07087a02ac5a1276e3e6151c27a1ff1449cf392a23f933f0e2a6c43206533b59"
+    },
+    {
+      "path": "src/web/pages/LoginPage.tsx",
+      "size": 8146,
+      "sha256": "641f43ee2c9879e6f159c73cf1fdadf9c61284f6c1e9e99bc5e3cfc1885acedc"
+    },
+    {
+      "path": "src/web/pages/SettingsPage.tsx",
+      "size": 2369,
+      "sha256": "93b4ec24236be0973cbf146b15c847de48340a8b6edfbe8ff00dfb446210c981"
+    },
+    {
+      "path": "src/web/pages/TvanBackportPage.tsx",
+      "size": 7436,
+      "sha256": "3204ff3d87ec41905c6726d421b26961f8df0453fbdd3143014b54ce75a0a95f"
+    },
+    {
+      "path": "src/web/storage/dataset-coverage.ts",
+      "size": 691,
+      "sha256": "325366790fdd8bcc0763a167a5cda175889ec5acf028fd165c9dc9d277b70e96"
+    },
+    {
+      "path": "src/web/storage/local-workspace.ts",
+      "size": 8093,
+      "sha256": "2199ec088ba4d215f14d93c1764ac53e06897d071d736e9765260256612ba247"
+    },
+    {
+      "path": "src/web/ui-tokens.css",
+      "size": 3164,
+      "sha256": "18fb66dcccfa95e1aa7b48c4624a233fb2032507458b8d1b84c7eda91b399204"
+    },
+    {
+      "path": "src/web/vite-env.d.ts",
+      "size": 39,
+      "sha256": "424faf9241dd699dda995b367ed36665732da1e6ec1f33b2fd40394488ecac92"
+    },
+    {
+      "path": "Start HDDT.command",
+      "size": 749,
+      "sha256": "94899c13be986bc44ddd1819d11953c62bc5d8e577f41e31e629d3cf213a4ca3"
+    },
+    {
+      "path": "Start-HDDT.cmd",
+      "size": 1551,
+      "sha256": "c06ed3acdbab230d0a7c31e0b80cd0a36dd98be2ce0b1d5f4a6278f30d80f3a7"
+    },
+    {
+      "path": "Start-HDDT.vbs",
+      "size": 426,
+      "sha256": "b6a313f787840b1d0a90efd629f743eec1f1816f316b2272a3cc10bfd3b12867"
+    },
+    {
+      "path": "tests/fixtures/ehoadondientu/gdt-dataset.json",
+      "size": 230,
+      "sha256": "7960a52c302d5a928ec748f16b7d91d74a70dc26c9ae472a4f8013223032704a"
+    },
+    {
+      "path": "tests/fixtures/ehoadondientu/invoice.pdf",
+      "size": 409,
+      "sha256": "36791dcd4fe4229de2b8bf32a13405135c57dcc5616beaf420e01e3672372c0f"
+    },
+    {
+      "path": "tests/fixtures/ehoadondientu/invoice.xml",
+      "size": 251,
+      "sha256": "55e6d0483514bc3d13f6bb5ac8e28b9d26bd3b2a5f76db540ac8bb2180ec53ab"
+    },
+    {
+      "path": "tests/fixtures/ehoadondientu/README.md",
+      "size": 580,
+      "sha256": "b8717638d41dd1c1693d8007b91f82f2a9e3935995135d5441a36813a05cd2bd"
+    },
+    {
+      "path": "tests/fixtures/ehoadondientu/tracuu-production-capture.html",
+      "size": 1868,
+      "sha256": "f783550d0debf34667a007bf2722494fbe7004b88d19e14cec4c66ef8252faef"
+    },
+    {
+      "path": "tests/fixtures/softdreams/sample1.2.sanitized.html",
+      "size": 2389,
+      "sha256": "0fff054262d5d65c8de60b4e4f4c76e2f57d10246e3d69634cf803891c234459"
+    },
+    {
+      "path": "tests/helpers.ts",
+      "size": 2146,
+      "sha256": "1f1a8f408755abbd008ce25463214d1641dd53b12e94cc6097bcb945cdad7512"
+    },
+    {
+      "path": "tests/integration/admin-tvan-catalog.test.ts",
+      "size": 10545,
+      "sha256": "10182acf83975b48b2995f526e8af1e04a38660c08f7ee3e383eb5fe4cbe0722"
+    },
+    {
+      "path": "tests/integration/admin-webui-api.test.ts",
+      "size": 5800,
+      "sha256": "45ec1bfa9cef1c7cb7198a5f7ee814e196b087dd7dcd9249a302134d893c0d48"
+    },
+    {
+      "path": "tests/integration/app-workflow.test.ts",
+      "size": 9055,
+      "sha256": "58711f2efac706857c00f0e5521298f5e2ce506e37edde6aa5e9670a1e79a056"
+    },
+    {
+      "path": "tests/integration/detail-concurrency.test.ts",
+      "size": 4756,
+      "sha256": "1ee46d73f02d2ce5b3fc8b6a52f25456f3738cf1249232e919712bcb0f0ab989"
+    },
+    {
+      "path": "tests/integration/ehoadondientu-flow.test.ts",
+      "size": 8598,
+      "sha256": "1c26568ab02e3c2d3a41b9ede2a507dc2671615639f8056c12b4dfecc34c61f0"
+    },
+    {
+      "path": "tests/integration/public-session-isolation.test.ts",
+      "size": 4178,
+      "sha256": "e269af3d4617ac48c5c327dc3d1683763804493f0112da3591e30d104899ffe2"
+    },
+    {
+      "path": "tests/integration/query-auto.test.ts",
+      "size": 15203,
+      "sha256": "1181dc0851c8f495afd049c97dc54ce6b65fbc54abc38559f0af1241ddf10343"
+    },
+    {
+      "path": "tests/integration/thaison-flow.test.ts",
+      "size": 5721,
+      "sha256": "eb4fc3b422bd8b8dfbf13eb59017b4c741c3c652790733a92a01cb9490fa2748"
+    },
+    {
+      "path": "tests/integration/tvan-artifact-api.test.ts",
+      "size": 12802,
+      "sha256": "72cf203d315d572c3bd7620d3a6c6be82f0c03be7aea61fd307f544f9b4e9c47"
+    },
+    {
+      "path": "tests/unit/acman.test.ts",
+      "size": 1586,
+      "sha256": "cecbd0c103e1292734b8f0434828342ea9a56b3495a70fee2827bd5913ad2557"
+    },
+    {
+      "path": "tests/unit/connector.test.ts",
+      "size": 11186,
+      "sha256": "db73f62c8a57171d66def53e7ae30824c5e088682f627086bdad80c5176b2505"
+    },
+    {
+      "path": "tests/unit/dataset.test.ts",
+      "size": 5002,
+      "sha256": "0844809e4a982fea7724d60dd0e10bca075ccb625f8eb71e30fa5a44bffed357"
+    },
+    {
+      "path": "tests/unit/download.test.ts",
+      "size": 7033,
+      "sha256": "f464ded372edf9ac8b4cd6ca93957ec8974143220024e0ad104827c265d80283"
+    },
+    {
+      "path": "tests/unit/dynamic-lookup.test.ts",
+      "size": 4392,
+      "sha256": "6c850ca8bdcc585f0f88884739ce0661424ee7a23a78cbad52e4851f959f8bed"
+    },
+    {
+      "path": "tests/unit/ehoadondientu.test.ts",
+      "size": 11399,
+      "sha256": "e0905542329d48b7f8f74571046d87e85d512a9d360dce7b2bcf99f1727d8441"
+    },
+    {
+      "path": "tests/unit/export.test.ts",
+      "size": 4186,
+      "sha256": "b968aeddcfae6971f1bd97e01ad2f7fffe917ba84c464a194895d51a6c5200a3"
+    },
+    {
+      "path": "tests/unit/fast.test.ts",
+      "size": 13986,
+      "sha256": "87e521dfc5a6437312f559203154c8f43473f2abc639305c184fa2200e3ba530"
+    },
+    {
+      "path": "tests/unit/filename.test.ts",
+      "size": 2195,
+      "sha256": "2d5c51252d0bf2a3178e2996a8f75566b745499bc3728b9406999520b48b8cfb"
+    },
+    {
+      "path": "tests/unit/incremental-sync.test.ts",
+      "size": 4416,
+      "sha256": "e12d7b41df0e95634d3bf4ee19e303d1ed72a0ebbe89090df5aa1aa4e2d5f68a"
+    },
+    {
+      "path": "tests/unit/invoice-filters.test.ts",
+      "size": 3256,
+      "sha256": "f29759950b86368284b885962afaf6fe708d2e04f49517b115afb04344c318a5"
+    },
+    {
+      "path": "tests/unit/invoice-relations.test.ts",
+      "size": 6700,
+      "sha256": "9362be5adf4f46b67b8fb9e32a613880ce8ebbd85c13288fb3ab25bf1d211c7c"
+    },
+    {
+      "path": "tests/unit/invoice-table-layout.test.ts",
+      "size": 4192,
+      "sha256": "e6315894d38fee04eff888339551530218659a2d2dac23f331b7b01667e2b0aa"
+    },
+    {
+      "path": "tests/unit/invoice-ui-preferences.test.ts",
+      "size": 1983,
+      "sha256": "e358d6e3715cacf99c613bab03d116bf0e0acf64361a6e14e3a964fa0016e9f6"
+    },
+    {
+      "path": "tests/unit/normalizer.test.ts",
+      "size": 9804,
+      "sha256": "0958c6873586b795d28cae085b3d1da72a0a4ddb6c5ee1f159607ae6fd641e21"
+    },
+    {
+      "path": "tests/unit/provider-research.test.ts",
+      "size": 4136,
+      "sha256": "a4fe2d61a7a3fb95f58e95a5d9fac32f190f5b8d40b93bdac7e2bf824d92f65f"
+    },
+    {
+      "path": "tests/unit/pvoil.test.ts",
+      "size": 6734,
+      "sha256": "db31cd17ba38d785c98b3adadb828670fe3329d5dafef6cad1682fba19ba503c"
+    },
+    {
+      "path": "tests/unit/release-config.test.ts",
+      "size": 2339,
+      "sha256": "0ee89a19af22e59a0e3e9ada9903ee9335332bb6f55d473fa14bced94a160e07"
+    },
+    {
+      "path": "tests/unit/selected-dataset.test.ts",
+      "size": 2518,
+      "sha256": "7e18a175a5386a3847ecba3ea34db649b4c76ec4b11d928989a98ce8e3baedeb"
+    },
+    {
+      "path": "tests/unit/settings.test.ts",
+      "size": 4779,
+      "sha256": "f1616c5d7fdd1245ce3844dd08d5607956306a0ab3e0dc49f401cb50a4480312"
+    },
+    {
+      "path": "tests/unit/softdreams-renderer.test.ts",
+      "size": 2429,
+      "sha256": "76b4d52004d7493454b4cc6abccfd10fa9ce2763639619c981df43361eb31cd1"
+    },
+    {
+      "path": "tests/unit/softdreams-search-parser.test.ts",
+      "size": 4163,
+      "sha256": "a7d76c9d028fd37d9ff952bca96929faa2df0687a14475d373fd4a86bff8ecda"
+    },
+    {
+      "path": "tests/unit/solution-provider.test.ts",
+      "size": 1712,
+      "sha256": "d50ed3d86380d96eda1a69c760a43ddf3ee6663ed0e67133b633f91c23a3b947"
+    },
+    {
+      "path": "tests/unit/thaison-artifact.test.ts",
+      "size": 2786,
+      "sha256": "b0a66badeb6470681e3e36dd113d4921ba2164b58bc8f5eff24e0aea50c1c32e"
+    },
+    {
+      "path": "tests/unit/thaison-parser.test.ts",
+      "size": 2978,
+      "sha256": "318d0a7b0d613ea8f0afeb04394bd76bac54afafaa0b303f2e5765e7b1a7eca1"
+    },
+    {
+      "path": "tests/unit/thaison.test.ts",
+      "size": 27229,
+      "sha256": "db2bcd63ad1c7e67088fa822713bd3338ae3dbd9e9fb7eab463a6f03472cc379"
+    },
+    {
+      "path": "tests/unit/tvan-artifact-cache.test.ts",
+      "size": 3090,
+      "sha256": "e6afd06c0cef5759352cc578766a3392c858937b91ab27cc42be3e57c5161b2f"
+    },
+    {
+      "path": "tests/unit/tvan-catalog.test.ts",
+      "size": 4676,
+      "sha256": "80ca02d9038e374a401ffa6f27ab498ff827631e55bc38cbaaa5391242edcc27"
+    },
+    {
+      "path": "tests/unit/tvan.test.ts",
+      "size": 52660,
+      "sha256": "1c9ee7236a66cf566ba665ed1a485791d972440b60a8eb31a3bc3e7bc29bdfa6"
+    },
+    {
+      "path": "tests/unit/utils-schemas.test.ts",
+      "size": 3024,
+      "sha256": "d72db80b7e7e7017f79b87bfaffea737de38b28d696ec900393d8b0a75fae93b"
+    },
+    {
+      "path": "tests/unit/vnpt.test.ts",
+      "size": 10008,
+      "sha256": "917c04c8101d0bcf5ab20b280cf05c891c715d7fcbceeeb977cc37d7a5bdd402"
+    },
+    {
+      "path": "tests/unit/zip.test.ts",
+      "size": 3112,
+      "sha256": "87da1d19d433c02f0738a1dc6e289dd833144b62af4bc4a5aa8f9a4b595d890e"
+    },
+    {
+      "path": "tsconfig.json",
+      "size": 634,
+      "sha256": "d91ed7b1fdb0c0a9ffc50ee2ef3b7834006e9425fcbfafa95c55502a73e5d2ba"
+    },
+    {
+      "path": "tsconfig.server.json",
+      "size": 359,
+      "sha256": "4679cd3a17a9829e90390a96a53a0f29bb4831c758bef8be3202b14efdcf5ff8"
+    },
+    {
+      "path": "VERSION",
+      "size": 6,
+      "sha256": "10e2e117b01523891ca271a615ae36e9d5e52348fd7d642f66727602c1b8dcbe"
+    },
+    {
+      "path": "vite.config.ts",
+      "size": 683,
+      "sha256": "90f91807b14e6fdc43f49e67c814fb082062b6a65bd091aa46e6f0fb7825aa1c"
+    },
+    {
+      "path": "vitest.config.ts",
+      "size": 393,
+      "sha256": "c2c593e384a0d68ccbec47c1f8c474937cec1e9eed49a43b84d021306a2f5038"
+    }
   ]
 }
