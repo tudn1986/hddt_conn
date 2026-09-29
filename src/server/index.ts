@@ -54,18 +54,50 @@ async function processIsRunning(pid: number): Promise<boolean> {
   }
 }
 
-async function lockOwnerIsRunning(lockPath: string): Promise<boolean> {
+type InstanceLockInfo = {
+  pid: number;
+  startedAt?: string;
+  appVersion?: string;
+};
+
+async function readLockInfo(lockPath: string): Promise<InstanceLockInfo | null> {
   try {
-    const pid = Number((await fs.readFile(lockPath, 'utf8')).trim());
-    return processIsRunning(pid);
+    const raw = (await fs.readFile(lockPath, 'utf8')).trim();
+    if (!raw) return null;
+    if (raw.startsWith('{')) {
+      const parsed = JSON.parse(raw) as Partial<InstanceLockInfo>;
+      const pid = Number(parsed.pid);
+      if (!Number.isSafeInteger(pid) || pid <= 0) return null;
+      return {
+        pid,
+        startedAt: typeof parsed.startedAt === 'string' ? parsed.startedAt : undefined,
+        appVersion: typeof parsed.appVersion === 'string' ? parsed.appVersion : undefined,
+      };
+    }
+    const pid = Number(raw);
+    return Number.isSafeInteger(pid) && pid > 0 ? { pid } : null;
   } catch {
-    return false;
+    return null;
+  }
+}
+
+async function lockOwnerIsRunning(lockPath: string): Promise<boolean> {
+  const lock = await readLockInfo(lockPath);
+  return lock ? processIsRunning(lock.pid) : false;
+}
+
+async function lockAgeMs(lockPath: string): Promise<number> {
+  try {
+    const stat = await fs.stat(lockPath);
+    return Math.max(0, Date.now() - stat.mtimeMs);
+  } catch {
+    return Number.POSITIVE_INFINITY;
   }
 }
 
 async function waitForExistingRuntime(
   readRuntime: () => Promise<{ port: number } | null>,
-  attempts = 15
+  attempts = 40
 ): Promise<number | null> {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const runtime = await readRuntime();
@@ -116,15 +148,31 @@ async function main(): Promise<void> {
     const runningOwner = await lockOwnerIsRunning(lockPath);
     if (runningOwner) {
       const port = await waitForExistingRuntime(() => settings.readRuntime());
-      if (port) openBrowser(`http://127.0.0.1:${port}`);
-      await app.close();
-      if (!port) throw new Error('Một instance HDDT khác đang khởi động nhưng chưa sẵn sàng.');
-      return;
+      if (port) {
+        openBrowser(`http://127.0.0.1:${port}`);
+        await app.close();
+        return;
+      }
+
+      // A stale legacy lock may contain a PID that Windows has already reused
+      // for an unrelated process. A genuine HDDT startup should publish
+      // runtime.json before this grace period expires.
+      const ageMs = await lockAgeMs(lockPath);
+      if (ageMs < 30_000) {
+        await app.close();
+        throw new Error('Một instance HDDT khác đang khởi động nhưng chưa sẵn sàng.');
+      }
     }
+
+    await settings.removeRuntime().catch(() => undefined);
     await fs.unlink(lockPath);
     lock = await fs.open(lockPath, 'wx', 0o600);
   }
-  await lock.writeFile(String(process.pid));
+  await lock.writeFile(JSON.stringify({
+    pid: process.pid,
+    startedAt: new Date().toISOString(),
+    appVersion: APP_VERSION,
+  }));
   await lock.sync();
 
   let stopping = false;

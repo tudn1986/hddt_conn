@@ -50,3 +50,11 @@ Windows binary phải được build trên Windows x64. macOS binary phải đư
 - `public/branding/hddt_conn_web_logo_horizontal.svg`
 - `assets/branding/hddt_conn_icon_app_1024.svg`
 - `assets/branding/hddt_conn_avatar_corporate.svg`
+
+
+## Windows local build dependency
+
+Windows local build does not require ImageMagick or `winget`.
+`pnpm package:win-x64` uses the checked-in `assets/branding/hddt_conn.ico`.
+
+ImageMagick remains relevant only to the macOS packaging path that generates `.icns`.

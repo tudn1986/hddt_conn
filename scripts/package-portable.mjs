@@ -124,7 +124,7 @@ if (targetPlatform === 'win32') {
   await fs.copyFile(path.join(projectRoot, 'HDDT-Tray.ps1'), path.join(releaseDir, 'HDDT-Tray.ps1'));
 
   const windowsIcon = path.join(releaseDir, 'hddt_conn.ico');
-  run('magick', [brandingSvg, '-background', 'none', '-define', 'icon:auto-resize=256,128,64,48,32,16', windowsIcon]);
+  await fs.copyFile(path.join(projectRoot, 'assets', 'branding', 'hddt_conn.ico'), windowsIcon);
 
   const systemRoot = process.env.WINDIR || process.env.SystemRoot || 'C:\\Windows';
   const cscPath = await firstExisting([

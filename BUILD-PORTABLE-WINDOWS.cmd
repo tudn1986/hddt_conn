@@ -7,7 +7,6 @@ node -e "const [a,b]=process.versions.node.split('.').map(Number);if(a<22||(a===
 call corepack enable || exit /b 1
 call corepack prepare pnpm@11.19.0 --activate || exit /b 1
 call pnpm install --frozen-lockfile || exit /b 1
-where magick >nul 2>nul || (echo ImageMagick magick is required to build the branded Windows icon.& exit /b 1)
 call pnpm verify || exit /b 1
 call pnpm package:win-x64 || exit /b 1
 echo.
