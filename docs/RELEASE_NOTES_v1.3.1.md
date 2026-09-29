@@ -58,3 +58,21 @@ Windows local build does not require ImageMagick or `winget`.
 `pnpm package:win-x64` uses the checked-in `assets/branding/hddt_conn.ico`.
 
 ImageMagick remains relevant only to the macOS packaging path that generates `.icns`.
+
+
+## Portable runtime architecture
+
+Portable releases no longer embed the server in a Node Single Executable Application (SEA).
+They ship a platform-native Node runtime plus `app/dist` and production `app/node_modules`.
+This keeps Playwright package metadata and filesystem module resolution intact.
+
+Windows layout:
+
+```text
+runtime/node.exe
+app/dist/server/index.js
+app/dist/public/
+app/node_modules/
+```
+
+`HDDT_CONN.exe` remains the user-facing launcher; the tray controller starts the bundled Node runtime in the background.

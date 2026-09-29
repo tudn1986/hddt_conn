@@ -193,7 +193,9 @@ Gói release chứa:
 Start-HDDT.vbs       launcher khuyến nghị, không mở console
 HDDT-Tray.ps1        tray controller
 Start-HDDT.cmd       fallback/debug
-hddt-server.exe      Node SEA server
+runtime/node.exe     Bundled Node.js runtime
+app/dist/server/     Compiled server
+app/node_modules/    Production runtime dependencies
 ```
 
 Double-click `Start-HDDT.vbs`. Server được tạo với `CreateNoWindow=true` và

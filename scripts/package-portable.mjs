@@ -73,42 +73,53 @@ async function firstExisting(paths) {
   return undefined;
 }
 
-const bundlePath = path.join(workDir, 'hddt.cjs');
+const appDir = path.join(releaseDir, 'app');
+const runtimeDir = path.join(releaseDir, 'runtime');
+const dependencyStage = path.join(workDir, 'production-install');
+await fs.mkdir(appDir, { recursive: true });
+await fs.mkdir(runtimeDir, { recursive: true });
+await fs.mkdir(dependencyStage, { recursive: true });
+
+for (const fileName of ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
+  await fs.copyFile(path.join(projectRoot, fileName), path.join(dependencyStage, fileName));
+}
 runPnpm([
-  'exec', 'esbuild', 'src/server/index.ts', '--bundle', '--platform=node', '--format=cjs',
-  '--target=node22', '--legal-comments=none', '--minify',
-  '--define:process.env.NODE_ENV="production"',
-  '--define:import.meta.url="file:///__hddt_sea__/app.js"',
-  `--outfile=${bundlePath}`,
+  'install', '--dir', dependencyStage, '--prod', '--frozen-lockfile', '--offline',
+  '--config.node-linker=hoisted', '--ignore-scripts',
 ]);
 
-const blobPath = path.join(workDir, 'hddt-sea.blob');
-const seaConfigPath = path.join(workDir, 'sea-config.json');
-await fs.writeFile(seaConfigPath, JSON.stringify({
-  main: bundlePath,
-  output: blobPath,
-  disableExperimentalSEAWarning: true,
-  useSnapshot: false,
-  useCodeCache: false,
-}, null, 2));
-run(process.execPath, ['--experimental-sea-config', seaConfigPath]);
+await fs.cp(path.join(projectRoot, 'dist'), path.join(appDir, 'dist'), { recursive: true });
+await fs.cp(path.join(dependencyStage, 'node_modules'), path.join(appDir, 'node_modules'), {
+  recursive: true,
+  dereference: true,
+});
 
-const executableName = targetPlatform === 'win32' ? 'hddt-server.exe' : 'hddt-server';
-const executablePath = path.join(releaseDir, executableName);
-await fs.copyFile(process.execPath, executablePath);
-if (targetPlatform === 'darwin') {
-  run('codesign', ['--remove-signature', executablePath]);
-}
-const postjectArgs = [
-  'exec', 'postject', executablePath, 'NODE_SEA_BLOB', blobPath,
-  '--sentinel-fuse', 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
-];
-if (targetPlatform === 'darwin') postjectArgs.push('--macho-segment-name', 'NODE_SEA');
-runPnpm(postjectArgs);
-if (targetPlatform === 'darwin') run('codesign', ['--sign', '-', executablePath]);
-if (targetPlatform !== 'win32') await fs.chmod(executablePath, 0o755);
+const runtimePackageJson = {
+  name: packageJson.name,
+  version: appVersion,
+  private: true,
+  type: 'module',
+  main: 'dist/server/index.js',
+  engines: packageJson.engines,
+  dependencies: packageJson.dependencies,
+};
+await fs.writeFile(path.join(appDir, 'package.json'), `${JSON.stringify(runtimePackageJson, null, 2)}
+`);
 
-await fs.cp(path.join(projectRoot, 'dist', 'public'), path.join(releaseDir, 'public'), { recursive: true });
+const runtimeExecutableName = targetPlatform === 'win32' ? 'node.exe' : 'node';
+const runtimeExecutable = path.join(runtimeDir, runtimeExecutableName);
+await fs.copyFile(process.execPath, runtimeExecutable);
+if (targetPlatform !== 'win32') await fs.chmod(runtimeExecutable, 0o755);
+
+// Fail packaging before ZIP creation if the embedded filesystem runtime cannot
+// resolve Playwright from app/node_modules. This guards against the Node SEA
+// embeddedRequire failure that originally broke the Windows portable build.
+run(runtimeExecutable, [
+  '--input-type=module',
+  '-e',
+  "import('playwright-core').then((m)=>{if(!m.chromium)process.exit(2);console.log('PLAYWRIGHT_RUNTIME_OK')})",
+], { cwd: appDir });
+
 for (const fileName of ['README_FIRST.txt', 'LICENSE.txt', 'VERSION']) {
   await fs.copyFile(path.join(projectRoot, fileName), path.join(releaseDir, fileName));
 }
@@ -146,7 +157,7 @@ if (targetPlatform === 'win32') {
   await fs.chmod(commandLauncher, 0o755);
 
   // Build a tiny macOS application wrapper so end users do not get a Terminal
-  // window when launching the portable release. The Node SEA server itself
+  // window when launching the portable release. The bundled Node runtime
   // remains a background process and continues to open the WebUI in the
   // default browser.
   const appLauncher = path.join(releaseDir, 'Start HDDT.app');
@@ -183,7 +194,7 @@ await fs.writeFile(path.join(releaseDir, 'BUILD_INFO.json'), `${JSON.stringify({
   arch: targetArch,
   node: process.version,
   packagedAt: new Date().toISOString(),
-  format: 'Node.js Single Executable Application',
+  format: 'Portable Node.js runtime + filesystem dependencies',
 }, null, 2)}\n`);
 
 async function filesUnder(directory, prefix = '') {

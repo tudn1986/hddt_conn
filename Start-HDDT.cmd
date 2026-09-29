@@ -7,13 +7,14 @@ rem This launcher is loopback-only HTTP. Keep the browser session cookie usable
 rem at http://127.0.0.1 for both packaged and source/developer fallback modes.
 if not defined HDDT_INSECURE_HTTP set "HDDT_INSECURE_HTTP=1"
 if not defined HDDT_BIND_HOST set "HDDT_BIND_HOST=127.0.0.1"
+if not defined NODE_ENV set "NODE_ENV=production"
 
 rem Portable Windows design:
 rem 1) show this black startup console;
-rem 2) start hddt-server.exe in the same console;
+rem 2) start the bundled Node runtime + app\dist\server\index.js in the same console;
 rem 3) HDDT-Tray.ps1 hides this console only after the server is healthy;
 rem 4) the PowerShell tray controller remains alive in Windows system tray.
-if exist "hddt-server.exe" if exist "HDDT-Tray.ps1" (
+if exist "runtime\node.exe" if exist "app\dist\server\index.js" if exist "HDDT-Tray.ps1" (
   powershell.exe -NoLogo -NoProfile -Sta -ExecutionPolicy Bypass -File "%~dp0HDDT-Tray.ps1"
   set "HDDT_EXIT=%ERRORLEVEL%"
   if not "%HDDT_EXIT%"=="0" (

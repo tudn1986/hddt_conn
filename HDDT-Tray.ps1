@@ -30,7 +30,10 @@ $baseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Respect an explicit caller override, otherwise select the local HTTP cookie.
 if (-not $env:HDDT_INSECURE_HTTP) { $env:HDDT_INSECURE_HTTP = '1' }
 if (-not $env:HDDT_BIND_HOST) { $env:HDDT_BIND_HOST = '127.0.0.1' }
-$serverExe = Join-Path $baseDir 'hddt-server.exe'
+$serverRuntime = Join-Path $baseDir 'runtime\node.exe'
+$serverEntry = Join-Path $baseDir 'app\dist\server\index.js'
+$serverWorkingDir = Join-Path $baseDir 'app'
+$env:NODE_ENV = 'production'
 $appDataDir = Join-Path $env:APPDATA 'HDDT'
 $runtimePath = Join-Path $appDataDir 'runtime.json'
 $versionPath = Join-Path $baseDir 'VERSION'
@@ -152,12 +155,12 @@ function Stop-Hddt {
   }
 }
 
-if (-not (Test-Path -LiteralPath $serverExe)) {
+if (-not (Test-Path -LiteralPath $serverRuntime) -or -not (Test-Path -LiteralPath $serverEntry)) {
   Show-HddtConsole
   Write-Host ''
-  Write-Host 'ERROR: hddt-server.exe was not found in this release folder.' -ForegroundColor Red
+  Write-Host 'ERROR: Portable Node runtime or server entrypoint was not found.' -ForegroundColor Red
   [System.Windows.Forms.MessageBox]::Show(
-    'hddt-server.exe was not found in the release folder.',
+    'Portable Node runtime or server entrypoint was not found in the release folder.',
     'HDDT',
     [System.Windows.Forms.MessageBoxButtons]::OK,
     [System.Windows.Forms.MessageBoxIcon]::Error
@@ -190,8 +193,9 @@ if (-not $existingUrl) {
     # NoNewWindow is intentional: server output stays in this startup console.
     # After startup succeeds this console is hidden, not terminated.
     $startRequest = @{
-      FilePath = $serverExe
-      WorkingDirectory = $baseDir
+      FilePath = $serverRuntime
+      ArgumentList = 'dist/server/index.js'
+      WorkingDirectory = $serverWorkingDir
       NoNewWindow = $true
       PassThru = $true
     }

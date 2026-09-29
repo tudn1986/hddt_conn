@@ -58,10 +58,48 @@ jobs:
             $names = $archive.Entries.FullName
             if (-not ($names -match '/HDDT_CONN.exe$')) { throw 'HDDT_CONN.exe missing from release ZIP.' }
             if (-not ($names -match '/hddt_conn.ico$')) { throw 'hddt_conn.ico missing from release ZIP.' }
-            if (-not ($names -match '/hddt-server.exe$')) { throw 'hddt-server.exe missing from release ZIP.' }
+            if (-not ($names -match '/runtime/node.exe$')) { throw 'Bundled runtime/node.exe missing from release ZIP.' }
+            if (-not ($names -match '/app/dist/server/index.js$')) { throw 'Server entrypoint missing from release ZIP.' }
+            if (-not ($names -match '/app/node_modules/playwright-core/package.json$')) { throw 'playwright-core runtime package missing from release ZIP.' }
+            if ($names -match '/hddt-server.exe$') { throw 'Legacy Node SEA hddt-server.exe must not be shipped.' }
           } finally {
             $archive.Dispose()
           }
+
+          $smokeDir = Join-Path $env:RUNNER_TEMP 'hddt-portable-smoke'
+          Remove-Item $smokeDir -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -Path $zip -DestinationPath $smokeDir
+          $portableRoot = Get-ChildItem $smokeDir -Directory | Select-Object -First 1
+          if (-not $portableRoot) { throw 'Portable root folder missing after extraction.' }
+
+          $env:NODE_ENV = 'production'
+          $env:HDDT_PORT = '33210'
+          $env:HDDT_FIXED_PORT = '1'
+          $env:HDDT_NO_OPEN_BROWSER = '1'
+          $env:HDDT_INSECURE_HTTP = '1'
+          $env:HDDT_BIND_HOST = '127.0.0.1'
+          $env:APPDATA = Join-Path $env:RUNNER_TEMP 'hddt-portable-appdata'
+          $env:HDDT_DATA_ROOT = Join-Path $env:RUNNER_TEMP 'hddt-portable-data'
+          New-Item -ItemType Directory -Force -Path $env:APPDATA, $env:HDDT_DATA_ROOT | Out-Null
+
+          $runtime = Join-Path $portableRoot.FullName 'runtime/node.exe'
+          $appDir = Join-Path $portableRoot.FullName 'app'
+          $process = Start-Process -FilePath $runtime -ArgumentList 'dist/server/index.js' -WorkingDirectory $appDir -NoNewWindow -PassThru
+          try {
+            $healthy = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              if ($process.HasExited) { break }
+              try {
+                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:33210/api/health' -TimeoutSec 1
+                if ($health.ok -and $health.version -eq '1.3.1') { $healthy = $true; break }
+              } catch {}
+              Start-Sleep -Milliseconds 250
+            }
+            if (-not $healthy) { throw 'Portable filesystem runtime failed /api/health smoke.' }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+          }
+
           Get-FileHash $zip -Algorithm SHA256
 
       - name: Upload Windows artifact

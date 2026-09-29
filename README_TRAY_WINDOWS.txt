@@ -12,7 +12,7 @@ Copy these files over the project root, preserving paths:
 
 Behavior:
 - Start-HDDT.vbs launches the tray controller with no visible console window.
-- HDDT-Tray.ps1 owns the Windows system tray icon and starts hddt-server.exe hidden.
+- HDDT-Tray.ps1 owns the Windows system tray icon and starts runtime\node.exe with app\dist\server\index.js.
 - Double-click tray icon / Open menu opens the WebUI.
 - Exit menu calls /api/app/exit and stops the local server.
 - Start-HDDT.cmd hands off to Start-HDDT.vbs and closes its black console immediately.
@@ -30,4 +30,4 @@ End-user launch:
 or
   Double-click Start-HDDT.cmd (console may flash briefly, then closes; app remains in tray)
 
-Do not tell end users to double-click hddt-server.exe directly if tray behavior is desired.
+Do not tell end users to run runtime\node.exe directly if tray behavior is desired.

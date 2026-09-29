@@ -2,9 +2,12 @@
 set -e
 cd "$(dirname "$0")"
 
-# Portable production: run the server detached so Terminal is not kept open.
-if [ -x "./hddt-server" ]; then
-  nohup ./hddt-server >/dev/null 2>&1 </dev/null &
+# Portable production: run the bundled Node runtime from the app directory.
+if [ -x "./runtime/node" ] && [ -f "./app/dist/server/index.js" ]; then
+  (
+    cd ./app
+    NODE_ENV=production HDDT_INSECURE_HTTP=1 HDDT_BIND_HOST=127.0.0.1       nohup ../runtime/node dist/server/index.js >/dev/null 2>&1 </dev/null &
+  )
   disown || true
   exit 0
 fi

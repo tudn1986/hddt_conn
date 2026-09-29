@@ -55,7 +55,7 @@ Portable Windows chứa:
 Start-HDDT.vbs
 HDDT-Tray.ps1
 Start-HDDT.cmd
-hddt-server.exe
+runtime/node.exe + app/dist/server/index.js
 ```
 
 ### Launcher khuyến nghị
@@ -67,7 +67,7 @@ Start-HDDT.vbs
 ```
 
 VBS khởi động PowerShell với `WindowStyle Hidden`. `HDDT-Tray.ps1` chạy
-`hddt-server.exe` với:
+`runtime/node.exe + app/dist/server/index.js` với:
 
 ```text
 UseShellExecute = false
