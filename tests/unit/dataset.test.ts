@@ -65,8 +65,10 @@ describe('dataset service', () => {
     expect(() => service.import({ ...base, documents: [{ key: base.documents[0].key, normalized: document({ direction: 'sales' }) }] })).toThrow(/không nhất quán/i);
   });
 
-  it('rejects lexical path traversal', async () => {
-    await expect(service.open(path.join(dataRoot, '..', 'outside.json'))).rejects.toMatchObject({
+  it('rejects an existing file outside dataRoot', async () => {
+    const outside = path.join(temporaryRoot, 'outside.json');
+    await fs.writeFile(outside, '{}');
+    await expect(service.open(outside)).rejects.toMatchObject({
       code: 'PATH_OUTSIDE_DATA_ROOT',
     });
   });
