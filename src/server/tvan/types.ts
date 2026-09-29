@@ -25,13 +25,17 @@ export interface TvanOriginalFileResult {
   contentType: 'application/pdf' | 'application/zip' | 'application/octet-stream';
 }
 
-export interface TvanPreparedArtifact {
+type TvanPreparedArtifactBase = {
   original: Buffer;
   originalFileName: string;
   originalContentType: 'application/pdf' | 'application/zip';
-  pdf: Buffer;
-  pdfFileName: string;
-}
+};
+
+export type TvanPreparedArtifact<RequiresPdf extends boolean = true> =
+  TvanPreparedArtifactBase
+  & (RequiresPdf extends true
+    ? { pdf: Buffer; pdfFileName: string }
+    : { pdf?: Buffer; pdfFileName?: string });
 
 export interface TvanTokenState {
   token: string;
@@ -73,6 +77,8 @@ export interface TvanAdapter {
   readonly displayName: string;
   readonly captchaMode: TvanCaptchaMode;
   readonly priority: TvanDownloadPriority;
+  readonly challengeSingleUse?: boolean;
+  cacheDiscriminator?(document: InvoiceDocument): string | undefined;
   matches(document: InvoiceDocument): boolean;
   capability(document: InvoiceDocument): TvanProviderCapability;
   getCaptchaChallenge?(document: InvoiceDocument, context: TvanAdapterContext): Promise<TvanChallengeResult>;
@@ -95,7 +101,7 @@ export interface TvanAdapter {
   prepareArtifact?(
     document: InvoiceDocument,
     context: TvanAdapterContext,
-  ): Promise<TvanPreparedArtifact>;
+  ): Promise<TvanPreparedArtifact<false>>;
   artifactStatus?(
     document: InvoiceDocument,
     context: TvanAdapterContext,
@@ -105,4 +111,6 @@ export interface TvanAdapter {
     context: TvanAdapterContext,
   ): Promise<TvanOriginalFileResult>;
   downloadPdf(document: InvoiceDocument, context: TvanAdapterContext): Promise<TvanPdfResult>;
+  discardChallenge?(challenge: TvanCaptchaChallenge, privateState: unknown): Promise<void> | void;
+  dispose?(): Promise<void> | void;
 }

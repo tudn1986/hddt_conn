@@ -66,7 +66,7 @@ describe('local Fastify API security', () => {
     expect(status.headers['x-content-type-options']).toBe('nosniff');
     expect(status.headers['x-frame-options']).toBe('DENY');
     expect(status.json()).toMatchObject({
-      version: '1.3.0-rc.2',
+      version: '1.3.1',
       authenticated: false,
       connectorMode: 'mock',
       capabilities: { liveSales: true, offlineDataset: true },
@@ -169,7 +169,7 @@ describe('end-to-end API workflow with mock portal', () => {
     expect(save.statusCode).toBe(410);
 
     const dataset = {
-      format: 'hddt-dataset', schemaVersion: 1, appVersion: '1.3.0-rc.2-public',
+      format: 'hddt-dataset', schemaVersion: 1, appVersion: '1.3.1-public',
       meta: { accountTaxCode: TEST_MST, direction: 'purchase', fromDate: '2026-07-01', toDate: '2026-07-31', createdAt: new Date().toISOString(), source: 'hoadondientu.gdt.gov.vn', recordCount: documents.length, detailCount: documents.length, sourceCounts: { standard: documents.length, pos: 0 } },
       documents: documents.map((document: any) => ({ key: document.key, normalized: document, rawSummary: document.rawSummary, rawDetail: document.rawDetail })),
     };

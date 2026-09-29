@@ -228,7 +228,12 @@ Write-Host 'Moving the startup window to the Windows system tray...'
 
 $tray = New-Object System.Windows.Forms.NotifyIcon
 $tray.Text = 'HDDT'
-$tray.Icon = [System.Drawing.SystemIcons]::Application
+$iconPath = Join-Path $baseDir 'hddt_conn.ico'
+if (Test-Path -LiteralPath $iconPath) {
+  try { $tray.Icon = New-Object System.Drawing.Icon($iconPath) } catch { $tray.Icon = [System.Drawing.SystemIcons]::Application }
+} else {
+  $tray.Icon = [System.Drawing.SystemIcons]::Application
+}
 $tray.Visible = $true
 
 $menu = New-Object System.Windows.Forms.ContextMenuStrip

@@ -36,6 +36,32 @@ describe('dynamic fields and lookup extraction', () => {
       .toBe('LIVE-CODE');
   });
 
+  it('recognizes FAST KeySearch before generic lookup fields', () => {
+    const lookup = extractLookup({
+      ttkhac: [
+        { ttruong: 'MCCQT', kdlieu: 'string', dlieu: 'DO-NOT-USE' },
+        { ttruong: 'KeySearch', kdlieu: 'string', dlieu: 'FAST-KEY-001' },
+      ],
+    }, 'tvan_fast');
+    expect(lookup).toMatchObject({
+      providerCode: 'tvan_fast',
+      lookupCode: 'FAST-KEY-001',
+      lookupCodeType: 'KeySearch',
+      confidence: 'medium',
+    });
+  });
+
+  it('keeps Thái Sơn Mã TC/DC TC out of generic lookup aliases', () => {
+    const lookup = extractLookup({
+      ttkhac: [
+        { ttruong: 'DC TC', kdlieu: 'string', dlieu: 'http://einvoice.vn/tra-cuu' },
+        { ttruong: 'Mã TC', kdlieu: 'string', dlieu: '683DFZ6Q3CB' },
+      ],
+    }, 'tvan_thaison');
+    expect(lookup?.lookupCode).toBeUndefined();
+    expect(lookup?.lookupBaseUrl).toBeUndefined();
+  });
+
   it('recognizes M-Invoice Số bảo mật as lookupCode', () => {
     const lookup = extractLookup({
       cttkhac: [{ ttruong: 'Số bảo mật', kdlieu: 'string', dlieu: 'A349FB0BF1854FAE' }],

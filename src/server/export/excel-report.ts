@@ -58,7 +58,7 @@ export async function exportReportWorkbook(
     throw new AppError('EXCEL_ROW_LIMIT', 'Dữ liệu vượt giới hạn số dòng của Excel.', 413);
   }
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'HDDT_v1.3.0-rc.2';
+  wb.creator = 'HDDT_v1.3.1';
   wb.created = new Date();
 
   const sheetInv = wb.addWorksheet('HoaDon', {

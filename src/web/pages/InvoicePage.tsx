@@ -48,6 +48,7 @@ import {
   FilePdfOutlined,
   QuestionCircleOutlined,
   ReloadOutlined,
+  SaveOutlined,
   SearchOutlined,
   SettingOutlined,
   StopOutlined,
@@ -164,6 +165,7 @@ interface Props {
   /** Last fully covered range from the opened/successfully synced dataset. */
   coverageRange: [string, string] | null;
   setCoverageRange: (range: [string, string] | null) => void;
+  openedDatasetScope: 'full' | 'selection' | null;
   username: string;
   authenticated: boolean;
   capabilities?: AppStatus['capabilities'];
@@ -204,6 +206,7 @@ const PUBLIC_PDF_PROVIDER_CODES = new Set([
   'tvan_pvoil',
   'tvan_invoice',
   'ehoadondientu',
+  'tvan_thaison',
 ]);
 
 const PUBLIC_PDF_PROVIDER_NAMES = new Set([
@@ -213,6 +216,7 @@ const PUBLIC_PDF_PROVIDER_NAMES = new Set([
   'PVOIL',
   'M-INVOICE',
   'EHOADONDIENTU',
+  'THÁI SƠN',
 ]);
 
 function canPublicViewPdf(document: InvoiceDocument): boolean {
@@ -256,6 +260,7 @@ export default function InvoicePage(props: Props) {
     setDateRange,
     coverageRange,
     setCoverageRange,
+    openedDatasetScope,
     username,
     authenticated,
     capabilities,
@@ -429,6 +434,9 @@ export default function InvoicePage(props: Props) {
   };
 
   const saveJson = async () => {
+    if (openedDatasetScope === 'selection') {
+      return message.warning('Dataset đang mở là tập hóa đơn được chọn, chưa phải coverage đầy đủ. Hãy đồng bộ đầy đủ trước khi dùng “Lưu dữ liệu”, hoặc dùng “Lưu JSON” cho tập hóa đơn đã chọn.');
+    }
     if (!documents.length || !dateRange || !username) return message.warning('Không đủ dữ liệu để lưu.');
     const saveRange = coverageRange ?? dateRange;
     try {
@@ -444,6 +452,26 @@ export default function InvoicePage(props: Props) {
         : `Đã tải dữ liệu qua trình duyệt: ${result.fileName}`);
     } catch (error) {
       message.error(error instanceof Error ? error.message : 'Lỗi lưu dữ liệu');
+    }
+  };
+
+  const saveSelectedJson = async () => {
+    if (!selectedDocuments.length || !dateRange || !username) return message.warning('Không đủ dữ liệu đã chọn để lưu.');
+    const saveRange = coverageRange ?? dateRange;
+    try {
+      const result = await localWorkspace.saveSelectedDataset({
+        accountTaxCode: username,
+        direction,
+        fromDate: saveRange[0],
+        toDate: saveRange[1],
+        documents: selectedDocuments,
+        sourceRecordCount: documents.length,
+      });
+      message.success(result.destination === 'workspace'
+        ? `Đã lưu JSON ${selectedDocuments.length} hóa đơn đã chọn: ${result.fileName}`
+        : `Đã tải JSON ${selectedDocuments.length} hóa đơn đã chọn: ${result.fileName}`);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Lỗi lưu JSON hóa đơn đã chọn');
     }
   };
 
@@ -1696,6 +1724,11 @@ export default function InvoicePage(props: Props) {
                 <Button size="small" loading={detailLoading} disabled={!authenticated} onClick={() => void loadDetails(false)}>
                   Lấy chi tiết HHDV
                 </Button>
+                <Tooltip title="Lưu một dataset JSON độc lập chỉ gồm các hóa đơn đang chọn; không thay đổi dataset đầy đủ hiện tại">
+                  <Button size="small" icon={<SaveOutlined />} onClick={() => void saveSelectedJson()}>
+                    Lưu JSON ({selectedDocuments.length.toLocaleString('vi-VN')})
+                  </Button>
+                </Tooltip>
                 <Button size="small" icon={<FileExcelOutlined />} onClick={() => void exportExcel()}>
                   Xuất Excel ({selectedDocuments.length.toLocaleString('vi-VN')})
                 </Button>

@@ -40,6 +40,7 @@ const KNOWN_PROVIDER_METADATA: Record<string, { displayName: string; providerTax
   tvan_vnpt: { displayName: 'VNPT Invoice', providerPortal: 'https://portaltool-miennam.vnpt-invoice.com.vn' },
   tvan_acman: { displayName: 'ACMAN AC-Invoice', providerTaxCode: '0104908371', providerPortal: 'https://hoadondientu.acman.vn' },
   tvan_pvoil: { displayName: 'PVOIL eInvoice', providerTaxCode: '0305795054', providerPortal: 'https://hoadon.pvoil.vn' },
+  tvan_thaison: { displayName: 'THÁI SƠN eInvoice', providerTaxCode: '0101300842', providerPortal: 'https://einvoice.vn' },
 };
 const TRANSPORT_TAX_CODE_NAMES = new Set(['tvandnkntt', 'mst tvan', 'ma so thue tvan', 'tax code tvan', 'provider tax code']);
 const PROVIDER_NAME_NAMES = new Set(['tentvandnkntt', 'ten tvan', 'provider name']);

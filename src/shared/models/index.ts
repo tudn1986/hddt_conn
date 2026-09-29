@@ -459,6 +459,12 @@ export interface DatasetMeta {
   recordCount: number;
   detailCount: number;
   sourceCounts?: { standard: number; pos: number };
+  /** Optional additive metadata describing dataset scope without changing schemaVersion 1. */
+  datasetScope?: 'full' | 'selection';
+  /** False means fromDate/toDate describe the source range, not a fully covered baseline. */
+  coverageComplete?: boolean;
+  /** Number of documents in the source dataset at the time the selection snapshot was saved. */
+  sourceRecordCount?: number;
 }
 
 export interface DatasetDocument {

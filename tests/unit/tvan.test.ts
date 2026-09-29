@@ -334,7 +334,7 @@ describe('TVAN registry and adapters', () => {
     const artifact = await adapter.prepareArtifact!(softdreamsDocument(), verifiedSession.ctx);
     expect(artifact.originalContentType).toBe('application/zip');
     expect(artifact.original.subarray(0, 2).toString()).toBe('PK');
-    expect(artifact.pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(artifact.pdf?.subarray(0, 5).toString()).toBe('%PDF-');
     expect(adapter.artifactStatus!(
       softdreamsDocument(),
       context(fetchImpl, verifiedSession.getToken()).ctx,
@@ -451,7 +451,7 @@ describe('TVAN registry and adapters', () => {
 
     const retryContext = context(fetchImpl, firstContext.getToken());
     const artifact = await adapter.prepareArtifact!(softdreamsDocument(), retryContext.ctx);
-    expect(artifact.pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(artifact.pdf?.subarray(0, 5).toString()).toBe('%PDF-');
     expect(searchCount).toBe(1);
     expect(prepareCount).toBe(2);
   });
@@ -986,6 +986,138 @@ describe('TVAN artifact store', () => {
       const stored = (service as any).artifacts.get(prepared.id);
       stored.expiresAt = Date.now() - 1;
       expect(() => service.getArtifactFile(prepared.id)).toThrowError(/hết thời gian lưu tạm/);
+    } finally {
+      await service.dispose();
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+
+
+describe('TVAN adapter cache discriminator', () => {
+  it('separates cache keys when adapter-private lookup identity changes', async () => {
+    const fs = await import('node:fs/promises');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const { TvanPdfService } = await import('../../src/server/tvan/pdf.service.js');
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'hddt-tvan-discriminator-'));
+    let downloads = 0;
+    const adapter = {
+      providerCode: 'discriminator_test',
+      displayName: 'Discriminator Test',
+      priority: 'P1' as const,
+      captchaMode: 'none' as const,
+      cacheDiscriminator: (doc: InvoiceDocument) => String((doc.rawDetail as any)?.privateLookup || ''),
+      matches: (doc: InvoiceDocument) => doc.providerCode === 'discriminator_test',
+      capability: () => ({
+        providerCode: 'discriminator_test',
+        displayName: 'Discriminator Test',
+        supported: true,
+        priority: 'P1' as const,
+        captchaMode: 'none' as const,
+      }),
+      prepareArtifact: async () => {
+        downloads += 1;
+        const content = Buffer.from('%PDF-1.4\n' + downloads + '\n%%EOF\n');
+        return {
+          original: content,
+          originalFileName: 'invoice-' + downloads + '.pdf',
+          originalContentType: 'application/pdf' as const,
+          pdf: content,
+          pdfFileName: 'invoice-' + downloads + '.pdf',
+        };
+      },
+      downloadPdf: async () => {
+        throw new Error('downloadPdf must not be called when prepareArtifact is present');
+      },
+    };
+    const registry = new TvanRegistry([adapter]);
+    const fakeSettings = {
+      getAppDataDir: () => root,
+      getConfig: () => ({ network: { requestTimeoutMs: 5_000, maxDownloadBytes: 1024 * 1024 } }),
+    } as any;
+    const service = new TvanPdfService(fakeSettings, { registry, fetchImpl: fetch });
+
+    const first = document({
+      key: 'same-document-key',
+      providerCode: 'discriminator_test',
+      rawDetail: { privateLookup: 'A' },
+    } as any);
+    const second = document({
+      key: 'same-document-key',
+      providerCode: 'discriminator_test',
+      rawDetail: { privateLookup: 'B' },
+    } as any);
+
+    try {
+      const a = await service.viewPdf(first);
+      const aAgain = await service.viewPdf(first);
+      const b = await service.viewPdf(second);
+      expect(a.fileName).toBe('invoice-1.pdf');
+      expect(aAgain.fileName).toBe('invoice-1.pdf');
+      expect(b.fileName).toBe('invoice-2.pdf');
+      expect(downloads).toBe(2);
+    } finally {
+      await service.dispose();
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('TVAN original-only artifact store', () => {
+  it('caches original ZIP without pretending a provider PDF exists', async () => {
+    const fs = await import('node:fs/promises');
+    const os = await import('node:os');
+    const path = await import('node:path');
+    const { TvanPdfService } = await import('../../src/server/tvan/pdf.service.js');
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'hddt-tvan-original-only-'));
+    const ZIP = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
+    const adapter = {
+      providerCode: 'original_only_test',
+      displayName: 'Original Only',
+      priority: 'P3' as const,
+      captchaMode: 'none' as const,
+      matches: (doc: InvoiceDocument) => doc.providerCode === 'original_only_test',
+      capability: () => ({
+        providerCode: 'original_only_test',
+        displayName: 'Original Only',
+        supported: true,
+        priority: 'P3' as const,
+        captchaMode: 'none' as const,
+      }),
+      prepareArtifact: async () => ({
+        original: ZIP,
+        originalFileName: 'invoice.zip',
+        originalContentType: 'application/zip' as const,
+      }),
+      downloadPdf: async () => {
+        throw new Error('downloadPdf must not be called when prepareArtifact is present');
+      },
+    };
+    const registry = new TvanRegistry([adapter]);
+    const fakeSettings = {
+      getAppDataDir: () => root,
+      getConfig: () => ({ network: { requestTimeoutMs: 5_000, maxDownloadBytes: 1024 * 1024 } }),
+    } as any;
+    const service = new TvanPdfService(fakeSettings, { registry, fetchImpl: fetch });
+    const doc = document({ key: 'original-only-doc', providerCode: 'original_only_test' });
+
+    try {
+      const prepared = await service.prepareArtifact(doc);
+      expect(service.getArtifactFile(prepared.id)).toMatchObject({
+        contentType: 'application/zip',
+        fileName: 'invoice.zip',
+      });
+      expect(service.artifactStatus(doc)).toMatchObject({
+        stage: 'original_ready',
+        ready: false,
+        canView: false,
+        canDownloadPdf: false,
+        canDownloadOriginal: true,
+      });
+      expect(() => service.getArtifactPdf(prepared.id)).toThrow(/chưa có PDF hợp lệ/i);
+      await expect(service.viewPdf(doc)).rejects.toMatchObject({ code: 'TVAN_PDF_NOT_READY' });
     } finally {
       await service.dispose();
       await fs.rm(root, { recursive: true, force: true });

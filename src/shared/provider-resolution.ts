@@ -8,6 +8,10 @@ export const ACMAN_SOLUTION_TAX_CODE = '0104908371';
 export const ACMAN_DOMAIN = 'hoadondientu.acman.vn';
 export const PVOIL_SOLUTION_TAX_CODE = '0305795054';
 export const PVOIL_DOMAIN = 'hoadon.pvoil.vn';
+export const FAST_SOLUTION_TAX_CODE = '0100727825';
+export const FAST_DOMAIN = 'einvoice.fast.com.vn';
+export const THAISON_SOLUTION_TAX_CODE = '0101300842';
+export const THAISON_DOMAIN = 'einvoice.vn';
 export const MINVOICE_SOLUTION_TAX_CODE = '0106026495-001';
 export const MINVOICE_PROVIDER_TAX_CODE = '0106026495';
 
@@ -26,6 +30,12 @@ export function presentationForSolutionTaxCode(taxCode: string | undefined): Inv
   };
   if (taxCode === PVOIL_SOLUTION_TAX_CODE) return {
     providerCode: 'tvan_pvoil', adapterCode: 'tvan_pvoil', domain: PVOIL_DOMAIN, confidence: 'high',
+  };
+  if (taxCode === FAST_SOLUTION_TAX_CODE) return {
+    providerCode: 'tvan_fast', adapterCode: 'tvan_fast', domain: FAST_DOMAIN, confidence: 'high',
+  };
+  if (taxCode === THAISON_SOLUTION_TAX_CODE) return {
+    providerCode: 'tvan_thaison', adapterCode: 'tvan_thaison', domain: THAISON_DOMAIN, confidence: 'high',
   };
   return undefined;
 }

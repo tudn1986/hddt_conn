@@ -19,7 +19,7 @@ import {
 } from '../../shared/utils/index.js';
 import type { SettingsService } from './settings.service.js';
 
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.3.1';
 
 function repairFinancialFields(item: DatasetDocument, direction: Direction): void {
   const rawSummary = isRecord(item.rawSummary) ? item.rawSummary : undefined;
@@ -150,9 +150,8 @@ export class DatasetService {
     if (path.extname(filePath).toLowerCase() !== '.json') {
       throw new AppError('INVALID_DATASET_PATH', 'Chỉ được mở file .json.');
     }
-    const safePath = assertPathInside(this.settings.getDataRoot(), filePath);
     const realDataRoot = await fs.realpath(this.settings.getDataRoot());
-    const realPath = assertPathInside(realDataRoot, await fs.realpath(safePath));
+    const realPath = assertPathInside(realDataRoot, await fs.realpath(filePath));
     const stat = await fs.stat(realPath);
     if (!stat.isFile()) throw new AppError('INVALID_DATASET_PATH', 'Đường dẫn không phải file.');
     if (stat.size > this.settings.getConfig().storage.maxDatasetBytes) {

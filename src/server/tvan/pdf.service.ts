@@ -41,8 +41,8 @@ type CachedArtifact = {
   original: Buffer;
   originalFileName: string;
   originalContentType: 'application/pdf' | 'application/zip';
-  pdf: Buffer;
-  pdfFileName: string;
+  pdf?: Buffer;
+  pdfFileName?: string;
   expiresAt: number;
 };
 
@@ -169,7 +169,12 @@ export class TvanPdfService {
   }
 
   private artifactCacheKey(adapter: TvanAdapter, document: InvoiceDocument): string {
-    return `${this.adapterRuntimeKey(adapter)}|${this.documentFingerprint(document)}`;
+    const discriminator = adapter.cacheDiscriminator?.(document);
+    return [
+      this.adapterRuntimeKey(adapter),
+      this.documentFingerprint(document),
+      discriminator || '',
+    ].join('|');
   }
 
   private tokenKey(adapter: TvanAdapter, document?: InvoiceDocument): string {
@@ -316,6 +321,14 @@ export class TvanPdfService {
     batchId?: string,
   ): Promise<TvanChallengeResult> {
     if (!adapter.getCaptchaChallenge) throw new AppError('TVAN_CAPTCHA_UNSUPPORTED', 'Adapter TVAN chưa khai báo endpoint CAPTCHA.', 501);
+    if (adapter.challengeSingleUse) {
+      for (const [existingId, existing] of this.challenges) {
+        if (existing.adapter.providerCode === adapter.providerCode && existing.document.key === document.key) {
+          await existing.adapter.discardChallenge?.(existing.challenge, existing.privateState);
+          this.challenges.delete(existingId);
+        }
+      }
+    }
     const result = await adapter.getCaptchaChallenge(document, this.context(adapter, document));
     this.challenges.set(result.challenge.id, {
       challenge: result.challenge,
@@ -393,17 +406,27 @@ export class TvanPdfService {
     const pending = this.challenges.get(challengeId);
     if (!pending) throw new AppError('TVAN_CAPTCHA_NOT_FOUND', 'CAPTCHA đã hết hạn hoặc không tồn tại.', 404);
     if (Date.now() - pending.createdAt > 15 * 60_000) {
+      if (pending.adapter.challengeSingleUse) {
+        await pending.adapter.discardChallenge?.(pending.challenge, pending.privateState);
+      }
       this.challenges.delete(challengeId);
       throw new AppError('TVAN_CAPTCHA_EXPIRED', 'CAPTCHA đã hết hạn.', 410);
     }
     if (!pending.adapter.verifyCaptcha) throw new AppError('TVAN_CAPTCHA_UNSUPPORTED', 'Adapter TVAN chưa hỗ trợ xác thực CAPTCHA.', 501);
-    const verification = await pending.adapter.verifyCaptcha(
-      pending.document,
-      pending.challenge,
-      pending.privateState,
-      answer,
-      this.context(pending.adapter, pending.document),
-    );
+    let verification;
+    try {
+      verification = await pending.adapter.verifyCaptcha(
+        pending.document,
+        pending.challenge,
+        pending.privateState,
+        answer,
+        this.context(pending.adapter, pending.document),
+      );
+    } catch (error) {
+      // Providers may opt into single-use CAPTCHA challenges without changing retry behavior for others.
+      if (pending.adapter.challengeSingleUse) this.challenges.delete(challengeId);
+      throw error;
+    }
     this.challenges.delete(challengeId);
     return {
       ok: true,
@@ -434,13 +457,14 @@ export class TvanPdfService {
     }
     const cached = this.cachedArtifact(adapter, document);
     if (cached) {
+      const pdfReady = Boolean(cached.pdf && cached.pdfFileName);
       return {
         providerCode: adapter.providerCode,
-        stage: 'pdf_ready',
-        ready: true,
+        stage: pdfReady ? 'pdf_ready' : 'original_ready',
+        ready: pdfReady,
         canRetryPrepare: false,
-        canView: true,
-        canDownloadPdf: true,
+        canView: pdfReady,
+        canDownloadPdf: pdfReady,
         canDownloadOriginal: true,
         expiresAt: new Date(cached.expiresAt).toISOString(),
         originalKind: cached.originalContentType === 'application/zip' ? 'zip' : 'pdf',
@@ -511,6 +535,13 @@ export class TvanPdfService {
 
   getArtifactPdf(id: string): TvanPdfResult {
     const artifact = this.artifact(id);
+    if (!artifact.pdf || !artifact.pdfFileName) {
+      throw new AppError(
+        'TVAN_PDF_NOT_READY',
+        'Artifact gốc đã sẵn sàng nhưng nhà cung cấp chưa có PDF hợp lệ để xem.',
+        422,
+      );
+    }
     return { content: artifact.pdf, contentType: 'application/pdf', fileName: artifact.pdfFileName };
   }
 
@@ -522,6 +553,13 @@ export class TvanPdfService {
     }
     if (adapter.prepareArtifact) {
       const artifact = await this.ensureArtifact(adapter, document);
+      if (!artifact.pdf || !artifact.pdfFileName) {
+        throw new AppError(
+          'TVAN_PDF_NOT_READY',
+          'Artifact gốc đã sẵn sàng nhưng nhà cung cấp chưa có PDF hợp lệ để xem.',
+          422,
+        );
+      }
       return {
         content: artifact.pdf,
         contentType: 'application/pdf',
@@ -644,11 +682,20 @@ export class TvanPdfService {
       batch.state.updatedAt = new Date().toISOString();
       try {
         const pdf = adapter.prepareArtifact
-          ? await this.ensureArtifact(adapter, document).then((artifact) => ({
-            content: artifact.pdf,
-            contentType: 'application/pdf' as const,
-            fileName: artifact.pdfFileName,
-          }))
+          ? await this.ensureArtifact(adapter, document).then((artifact) => {
+            if (!artifact.pdf || !artifact.pdfFileName) {
+              throw new AppError(
+                'TVAN_PDF_NOT_READY',
+                'Artifact gốc đã sẵn sàng nhưng nhà cung cấp chưa có PDF hợp lệ để tải batch.',
+                422,
+              );
+            }
+            return {
+              content: artifact.pdf,
+              contentType: 'application/pdf' as const,
+              fileName: artifact.pdfFileName,
+            };
+          })
           : await adapter.downloadPdf(document, context);
         this.ensureActive();
         const usedBytes = batch.ordered.reduce((sum, item) => sum + (item.task.size || 0), 0);
@@ -735,7 +782,12 @@ export class TvanPdfService {
     if (!batch) return;
     this.batches.delete(batchId);
     for (const [challengeId, challenge] of this.challenges) {
-      if (challenge.batchId === batchId) this.challenges.delete(challengeId);
+      if (challenge.batchId === batchId) {
+        if (challenge.adapter.challengeSingleUse) {
+          await challenge.adapter.discardChallenge?.(challenge.challenge, challenge.privateState);
+        }
+        this.challenges.delete(challengeId);
+      }
     }
     await fsp.rm(batch.directory, { recursive: true, force: true }).catch(() => undefined);
   }
@@ -750,6 +802,9 @@ export class TvanPdfService {
     this.artifacts.clear();
     this.artifactCache.clear();
     this.inflightArtifacts.clear();
+    await Promise.allSettled(this.registry.getAdapters().map(async (adapter) => {
+      await adapter.dispose?.();
+    }));
     await fsp.rm(this.batchRoot, { recursive: true, force: true }).catch(() => undefined);
   }
 

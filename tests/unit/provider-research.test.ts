@@ -29,13 +29,45 @@ describe('provider research UI model', () => {
     expect(research.solutionTaxCode).toBe('0100727825');
     expect(research.providerName).toBe('FAST');
     expect(research.lookupCode).toBe('FAST-CODE-001');
-    expect(research.supportedByKnownAdapter).toBe(false);
+    expect(research.supportedByKnownAdapter).toBe(true);
     expect(research.portals[0]).toMatchObject({
       url: 'https://seller.example.vn/lookup?id=1',
       source: 'dataset',
       confidence: 'high',
     });
     expect(research.portals.some(item => item.url.startsWith('https://einvoice.fast.com.vn'))).toBe(true);
+    const fastLookup = research.portals.find(item => item.label === 'URL tra cứu FAST theo KeySearch');
+    expect(fastLookup?.url).toContain('/index.aspx?c=FAST-CODE-001');
+    expect(fastLookup?.url).not.toContain('hash=');
+  });
+
+  it('marks Thái Sơn as adapter-backed and keeps observed lookup portal first', () => {
+    const invoice = document({
+      providers: { solution: { taxCode: '0101300842' }, transport: { code: 'tvan_thaison' } },
+      lookup: {
+        providerCode: 'tvan_thaison',
+        lookupCode: '683DFZ6Q3CB',
+        lookupCodeType: 'Mã TC',
+        lookupBaseUrl: 'http://einvoice.vn',
+        lookupPathRaw: '/tra-cuu',
+        sourceSection: 'invoice.ttkhac',
+        sourceField: 'Mã TC',
+        confidence: 'high',
+      },
+      rawSummary: {
+        msttcgp: '0101300842',
+        ttkhac: [
+          { ttruong: 'DC TC', dlieu: 'http://einvoice.vn/tra-cuu' },
+          { ttruong: 'Mã TC', dlieu: '683DFZ6Q3CB' },
+        ],
+      },
+    } as any);
+    const research = providerResearchFor(invoice);
+    expect(research.providerName).toBe('THÁI SƠN');
+    expect(research.adapterCode).toBe('tvan_thaison');
+    expect(research.supportedByKnownAdapter).toBe(true);
+    expect(research.lookupCode).toBe('683DFZ6Q3CB');
+    expect(research.portals[0]?.url).toBe('http://einvoice.vn/tra-cuu');
   });
 
   it('marks current supported providers as adapter-backed', () => {

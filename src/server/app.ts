@@ -28,7 +28,7 @@ import { registerPresentationRoutes } from './routes/presentation.routes.js';
 const currentDir = typeof __dirname === 'string'
   ? __dirname
   : path.dirname(fileURLToPath(import.meta.url));
-export const APP_VERSION = '1.3.0-rc.2';
+export const APP_VERSION = '1.3.1';
 
 export type BuildAppOptions = {
   connectorMode?: ConnectorMode;

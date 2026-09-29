@@ -1,5 +1,5 @@
 import type { InvoiceDocument } from './models/index.js';
-import { presentationForSolutionTaxCode } from './provider-resolution.js';
+import { FAST_DOMAIN, FAST_SOLUTION_TAX_CODE, presentationForSolutionTaxCode } from './provider-resolution.js';
 import { solutionProviderFriendlyName, solutionProviderTaxCodeOf } from './solution-provider.js';
 
 export type ProviderInfoSource = 'dataset' | 'adapter' | 'official' | 'community';
@@ -36,7 +36,7 @@ const KNOWN_PROVIDER_RESEARCH: Record<string, KnownProviderResearch> = {
   '0101360697': { name: 'BKAV', portalUrl: 'https://www.bkav.com/ehoadon/', source: 'official', confidence: 'medium', note: 'Trang dịch vụ chính thức; URL tra cứu cụ thể cần lấy từ hóa đơn/XML.' },
   '0108971656': { name: 'MY SOFTWARE', source: 'community', confidence: 'low', note: 'Đã xác định doanh nghiệp theo MST nhưng chưa có portal tra cứu đáng tin cậy.' },
   '0105958921': { name: 'ITT', source: 'community', confidence: 'low', note: 'Đã xác định doanh nghiệp theo MST nhưng chưa có portal tra cứu đáng tin cậy.' },
-  '0101300842': { name: 'THÁI SƠN', portalUrl: 'https://einvoice.vn', source: 'community', confidence: 'medium', note: 'Portal sản phẩm; cần capture lookup/download của hóa đơn thực tế.' },
+  '0101300842': { name: 'THÁI SƠN', portalUrl: 'https://einvoice.vn', source: 'adapter', confidence: 'medium', note: 'Adapter v1 đọc Mã TC/DC TC trong provider scope và chỉ enable tenant đã có evidence; portal chung chưa được suy đoán.' },
   '0104128565': { name: 'FPT IS', portalUrl: 'https://einvoice.fpt.com.vn', source: 'official', confidence: 'medium', note: 'Website FPT.eInvoice chính thức; cần URL/capture tra cứu cụ thể theo hóa đơn.' },
   '0106870211': { name: 'ICORP / VIET-INVOICE', portalUrl: 'https://tracuu.vietinvoice.vn', source: 'community', confidence: 'medium', note: 'Discovery candidate; cần xác minh bằng dataset/XML và network capture.' },
   '0100727825': { name: 'FAST', portalUrl: 'https://einvoice.fast.com.vn', lookupUrl: 'https://einvoice.fast.com.vn', source: 'official', confidence: 'high', note: 'Có bản thể hiện công khai chứa mã tra cứu và portal FAST.' },
@@ -120,6 +120,17 @@ export function providerResearchFor(document: InvoiceDocument): {
     portals.push({ url: item.url, label: 'URL quan sát trong Raw JSON', source: 'dataset', confidence: 'medium', note: item.path });
   }
 
+  if (solutionTaxCode === FAST_SOLUTION_TAX_CODE && document.lookup?.lookupCode) {
+    const url = new URL('/index.aspx', 'https://' + FAST_DOMAIN);
+    url.searchParams.set('c', document.lookup.lookupCode);
+    portals.push({
+      url: url.toString(),
+      label: 'URL tra cứu FAST theo KeySearch',
+      source: 'adapter',
+      confidence: 'high',
+      note: 'Link public không chứa hash; CAPTCHA vẫn do người dùng nhập trong hddt_conn.',
+    });
+  }
   if (known?.lookupUrl) portals.push({ url: known.lookupUrl, label: 'URL tra cứu tham khảo', source: known.source, confidence: known.confidence, note: known.note });
   if (known?.portalUrl) portals.push({ url: known.portalUrl, label: 'Portal nhà cung cấp', source: known.source, confidence: known.confidence, note: known.note });
 

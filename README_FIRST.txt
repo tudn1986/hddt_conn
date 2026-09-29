@@ -1,23 +1,22 @@
-*** PUBLIC WEB RELEASE CANDIDATE 1.3.0-rc.2 ***
-KHONG SU DUNG CAC STACK/TAI LIEU LOCAL LEGACY DE PUBLIC INTERNET.
-DOC BAT BUOC: docs/PUBLIC_DOCKER_DEPLOYMENT.md va docs/RELEASE_CANDIDATE_ACCEPTANCE.md
-BAN RC CHUA DU DIEU KIEN PUBLIC PRODUCTION TRUOC KHI HOAN TAT CHECKLIST NGHIEM THU.
+*** hddt_conn v1.3.1 ***
 
-RC.2 - SELECTED-ONLY EXPORT + MA HANG HOA/DICH VU
-- Excel/PDF/XML hang loat chi xu ly hoa don/chung tu da tick chon tren man hinh Quan ly hoa don.
-- Selection duoc giu tai App de dung chung cho trang tai XML/ZIP va tab Ket xuat Form PMKT.
-- Sheet ChiTiet cua bao cao Excel bo sung cot "Ma hang hoa/dich vu" (itemCode) va giu kieu Text.
-- Bao cao HHDV tren frontend va cua so Chi tiet HHDV hien thi "Ma hang hoa/dich vu".
-- Xem docs/RELEASE_NOTES_v1.3.0-rc.2.md.
+BAN PHAT HANH DUOC DONG GOI TU MA NGUON DA KIEM THU TREN DEV 8288.
 
-hddt-conn v1.2.1 — Portable release (LEGACY LOCAL ONLY)
+THAY DOI CHINH v1.3.1
+- Cap nhat logo WebUI, favicon va icon ung dung Windows/macOS.
+- Windows: double-click HDDT_CONN.exe de khoi dong ung dung.
+- HDDT_CONN.exe su dung icon moi; system tray cung su dung icon hddt_conn moi.
+- Start-HDDT.vbs va Start-HDDT.cmd duoc giu lam fallback/debug.
+- Xem docs/RELEASE_NOTES_v1.3.1.md.
+
+hddt_conn v1.3.1 — Portable release
 
 WINDOWS
-1. Khuyến nghị: double-click "Start-HDDT.vbs".
+1. Khuyến nghị: double-click "HDDT_CONN.exe".
 2. Server chạy ẩn; biểu tượng hddt-conn xuất hiện ở system tray.
 3. Double-click biểu tượng tray để mở WebUI.
 4. Right-click > "Thoát hddt-conn" để dừng server.
-5. "Start-HDDT.cmd" vẫn được giữ làm launcher/fallback debug.
+5. "Start-HDDT.vbs" và "Start-HDDT.cmd" vẫn được giữ làm launcher/fallback debug.
 
 macOS
 1. Khuyến nghị: double-click "Start HDDT.app".

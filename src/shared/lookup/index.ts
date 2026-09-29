@@ -3,6 +3,7 @@ import { isRecord, safeString } from '../utils/index.js';
 
 type FoundField = { name: string; value: unknown; section: string };
 const CODE_NAMES = [
+  'KeySearch', 'keySearch', 'KEYSEARCH',
   'Fkey', 'Hilo-SearchKey', 'Mã tra cứu', 'Ma tra cuu', 'MA_TRA_CUU',
   'Mã số bí mật', 'Ma so bi mat', 'Số bảo mật', 'So bao mat', 'sobaomat',
   'TransactionID', 'transactionID', 'lookupCode',

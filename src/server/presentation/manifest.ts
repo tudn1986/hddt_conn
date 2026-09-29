@@ -12,6 +12,8 @@ const MANIFESTS: Record<string, ManifestEntry> = {
   tvan_vnpt: { providerFamily: 'vnpt', adapterId: 'vnpt-portal-v1', adapterVersion: '1.0.0' },
   tvan_acman: { providerFamily: 'acman', adapterId: 'acman-v1', adapterVersion: '1.0.0' },
   tvan_pvoil: { providerFamily: 'pvoil', adapterId: 'pvoil-v1', adapterVersion: '1.0.0' },
+  tvan_fast: { providerFamily: 'fast', adapterId: 'fast-einvoice-browser-captcha-v1', adapterVersion: '2.0.0' },
+  tvan_thaison: { providerFamily: 'thaison', adapterId: 'thaison-einvoice-v1', adapterVersion: '1.0.0' },
 };
 
 export function presentationIdentityOf(adapter: TvanAdapter): PresentationAdapterIdentity {
