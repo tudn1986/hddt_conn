@@ -3,11 +3,11 @@
   "schemaVersion": 1,
   "appVersion": "1.3.1",
   "releaseRevision": "1.3.1",
-  "generatedAt": "2026-09-29T06:27:39.417Z",
+  "generatedAt": "2026-09-29T06:46:44.180Z",
   "scope": "source",
   "manifestSelfExcluded": true,
   "fileCount": 328,
-  "totalBytes": 2930122,
+  "totalBytes": 2931077,
   "verification": {
     "report": "docs/RELEASE_NOTES_v1.3.1.md",
     "dependencyEnabledVerify": "pnpm-verify-required-before-packaging",
@@ -38,8 +38,8 @@
     },
     {
       "path": ".github/workflows/release-windows-v1.3.1.yml",
-      "size": 3014,
-      "sha256": "5f708c4ffdcae1da6ee01843183041361258a15cb7dac9eb523ec57a9e6ce014"
+      "size": 3096,
+      "sha256": "1587874c99f862fddb512426c45eb9b9b23182bd0ba9872d7c8577711419570c"
     },
     {
       "path": ".gitignore",
@@ -64,12 +64,12 @@
     {
       "path": "BUILD-PORTABLE-macOS.command",
       "size": 774,
-      "sha256": "6848f31edf7dc381f6e242f440e9ca8a153fdbe2a6e16edc083827325c6b67cd"
+      "sha256": "2d3c9be010feca455e69e3d0f8d852b043ff15adb6175fe2c661190d0e01fd05"
     },
     {
       "path": "BUILD-PORTABLE-WINDOWS.cmd",
       "size": 884,
-      "sha256": "f105d3f9d0ba36fc5771d4d40226234115f44440e1600882edfc307c5bbf8377"
+      "sha256": "9f9c2e249d03afe9a218a3140a527502c9a96bab14a9c69dee65b82408ce3379"
     },
     {
       "path": "compose.dev.yml",
@@ -408,8 +408,8 @@
     },
     {
       "path": "docs/tvan_design/design/HDDT_CONN_THAISON_FULL_TECHNICAL_REPORT.md",
-      "size": 34862,
-      "sha256": "d97c8247fc47ccf6e1150b6cd416c5fbaedb05b602730ca2621573777683960a"
+      "size": 34860,
+      "sha256": "fc7844a26fa3de0e6c7f446b0b76d00cadd8655a48e53c663443c6581996d4c7"
     },
     {
       "path": "docs/tvan_design/design/HDDT_CONN_THAISON_PRESENTATION_DESIGN.md",
@@ -788,13 +788,13 @@
     },
     {
       "path": "package.json",
-      "size": 2187,
-      "sha256": "5d0cbb5e71cf7682816870019394143d67116106820c8a4715d2c89058cc5045"
+      "size": 2218,
+      "sha256": "faf5e3c98dd8a0edfd9d8772c1907ed99007b6bf470b2b6b75e4f6042e8affd4"
     },
     {
       "path": "pnpm-lock.yaml",
-      "size": 108872,
-      "sha256": "915cb3ba711f89791468b1009889cbb5e3d556b0bdc88364186728e7c05cedbd"
+      "size": 109837,
+      "sha256": "0a7a8174076e164f79ef69c10d65136644ef535bb9a98ef1a49a713f5db1bd10"
     },
     {
       "path": "pnpm-workspace.yaml",
@@ -988,8 +988,8 @@
     },
     {
       "path": "src/server/services/dataset.service.ts",
-      "size": 7321,
-      "sha256": "af62596284148851ab0e5826fb815119805fda6623651ab277bec2f3d38356c6"
+      "size": 7243,
+      "sha256": "eb0145ff36f99c4c8581305ee98a69347c11b0ca69ea4ca68bef1866a297d935"
     },
     {
       "path": "src/server/services/download.service.ts",
@@ -1493,8 +1493,8 @@
     },
     {
       "path": "tests/unit/dataset.test.ts",
-      "size": 5002,
-      "sha256": "0844809e4a982fea7724d60dd0e10bca075ccb625f8eb71e30fa5a44bffed357"
+      "size": 4959,
+      "sha256": "7cc48c2fccb0f03bdb48514ee8f56a5f0287e0cc3130f1b08bf970d879d79451"
     },
     {
       "path": "tests/unit/download.test.ts",
