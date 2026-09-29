@@ -11,6 +11,7 @@
   <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
   <circle cx="512" cy="512" r="362" fill="#FFFFFF" opacity="0.08"/>
   <circle cx="512" cy="512" r="292" fill="#FFFFFF" opacity="0.06"/>
+
   <g filter="url(#shadow)">
     <rect x="266" y="164" width="492" height="610" rx="54" fill="#FFFFFF"/>
     <rect x="318" y="232" width="238" height="34" rx="17" fill="#0B5FB8"/>
@@ -22,12 +23,14 @@
     <circle cx="622" cy="686" r="94" fill="#18A66A"/>
     <path d="M581 686l39 38 84-91" fill="none" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
+
   <g fill="none" stroke="#9BD7FF" stroke-width="18" stroke-linecap="round" opacity="0.86">
     <path d="M192 514h88"/>
     <path d="M744 514h88"/>
     <circle cx="166" cy="514" r="18" fill="#9BD7FF" stroke="none"/>
     <circle cx="858" cy="514" r="18" fill="#9BD7FF" stroke="none"/>
   </g>
+
   <text x="512" y="880" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="800" fill="#FFFFFF">hddt_conn</text>
   <text x="512" y="930" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="600" fill="#CDEEFF">E-invoice lookup platform</text>
 </svg>
