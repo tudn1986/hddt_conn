@@ -28,7 +28,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.13.0'
-          cache: 'pnpm'
 
       - name: Show toolchain
         shell: pwsh

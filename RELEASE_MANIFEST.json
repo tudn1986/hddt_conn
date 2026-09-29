@@ -3,11 +3,11 @@
   "schemaVersion": 1,
   "appVersion": "1.3.1",
   "releaseRevision": "1.3.1",
-  "generatedAt": "2026-09-29T06:46:44.180Z",
+  "generatedAt": "2026-09-29T07:45:43.128Z",
   "scope": "source",
   "manifestSelfExcluded": true,
   "fileCount": 328,
-  "totalBytes": 2931077,
+  "totalBytes": 2931059,
   "verification": {
     "report": "docs/RELEASE_NOTES_v1.3.1.md",
     "dependencyEnabledVerify": "pnpm-verify-required-before-packaging",
@@ -38,8 +38,8 @@
     },
     {
       "path": ".github/workflows/release-windows-v1.3.1.yml",
-      "size": 3096,
-      "sha256": "1587874c99f862fddb512426c45eb9b9b23182bd0ba9872d7c8577711419570c"
+      "size": 3072,
+      "sha256": "668a8032f4ef52aa96a284abe380b3e855ac7e5aa33cafeaf51173e80eba2fa9"
     },
     {
       "path": ".gitignore",
@@ -48,8 +48,8 @@
     },
     {
       "path": "assets/branding/hddt_conn_avatar_corporate.svg",
-      "size": 2061,
-      "sha256": "3a483afa51f59ef48286e5f2666bdcb39f40b27c93419ed1973e7242da66d6bc"
+      "size": 2064,
+      "sha256": "5e0030c6c1c5e98ef790112ce4d57bf066037c3d822b5aaefcf1f2299b6df21d"
     },
     {
       "path": "assets/branding/hddt_conn_icon_app_1024.svg",
@@ -803,8 +803,8 @@
     },
     {
       "path": "public/branding/hddt_conn_avatar_corporate.svg",
-      "size": 2061,
-      "sha256": "3a483afa51f59ef48286e5f2666bdcb39f40b27c93419ed1973e7242da66d6bc"
+      "size": 2064,
+      "sha256": "5e0030c6c1c5e98ef790112ce4d57bf066037c3d822b5aaefcf1f2299b6df21d"
     },
     {
       "path": "public/branding/hddt_conn_favicon.svg",
