@@ -1,0 +1,130 @@
+name: Build Windows portable
+
+on:
+  push:
+    branches:
+      - 'release/v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-x64:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read release version
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION -Raw).Trim()
+          if (-not $version) { throw 'VERSION is empty.' }
+          "HDDT_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+          run_install: false
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+
+      - name: Show toolchain
+        shell: pwsh
+        run: |
+          node --version
+          pnpm --version
+
+      - name: Install dependencies
+        shell: pwsh
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify
+        shell: pwsh
+        run: pnpm verify
+
+      - name: Build Windows portable
+        shell: pwsh
+        run: pnpm package:win-x64
+
+      - name: Validate artifact
+        shell: pwsh
+        run: |
+          $zip = "release/hddt_conn_v$($env:HDDT_VERSION)_windows_x64.zip"
+          if (-not (Test-Path $zip)) { throw "Missing $zip" }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip))
+          try {
+            $names = $archive.Entries.FullName
+            if (-not ($names -match '/HDDT_CONN.exe$')) { throw 'HDDT_CONN.exe missing from release ZIP.' }
+            if (-not ($names -match '/hddt_conn.ico$')) { throw 'hddt_conn.ico missing from release ZIP.' }
+            if (-not ($names -match '/runtime/node.exe$')) { throw 'Bundled runtime/node.exe missing from release ZIP.' }
+            if (-not ($names -match '/app/dist/server/index.js$')) { throw 'Server entrypoint missing from release ZIP.' }
+            if (-not ($names -match '/app/node_modules/playwright-core/package.json$')) { throw 'playwright-core runtime package missing from release ZIP.' }
+            if ($names -match '/hddt-server.exe$') { throw 'Legacy Node SEA hddt-server.exe must not be shipped.' }
+          } finally {
+            $archive.Dispose()
+          }
+
+          $smokeDir = Join-Path $env:RUNNER_TEMP 'hddt-portable-smoke'
+          Remove-Item $smokeDir -Recurse -Force -ErrorAction SilentlyContinue
+          Expand-Archive -Path $zip -DestinationPath $smokeDir
+          $portableRoot = Get-ChildItem $smokeDir -Directory | Select-Object -First 1
+          if (-not $portableRoot) { throw 'Portable root folder missing after extraction.' }
+
+          $env:NODE_ENV = 'production'
+          $env:HDDT_PORT = '33210'
+          $env:HDDT_FIXED_PORT = '1'
+          $env:HDDT_NO_OPEN_BROWSER = '1'
+          $env:HDDT_INSECURE_HTTP = '1'
+          $env:HDDT_BIND_HOST = '127.0.0.1'
+          $env:APPDATA = Join-Path $env:RUNNER_TEMP 'hddt-portable-appdata'
+          $env:HDDT_DATA_ROOT = Join-Path $env:RUNNER_TEMP 'hddt-portable-data'
+          New-Item -ItemType Directory -Force -Path $env:APPDATA, $env:HDDT_DATA_ROOT | Out-Null
+
+          $runtime = Join-Path $portableRoot.FullName 'runtime/node.exe'
+          $appDir = Join-Path $portableRoot.FullName 'app'
+          $process = Start-Process -FilePath $runtime -ArgumentList 'dist/server/index.js' -WorkingDirectory $appDir -NoNewWindow -PassThru
+          try {
+            $healthy = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              if ($process.HasExited) { break }
+              try {
+                $health = Invoke-RestMethod -Uri 'http://127.0.0.1:33210/api/health' -TimeoutSec 1
+                if ($health.ok -and $health.version -eq $env:HDDT_VERSION) { $healthy = $true; break }
+              } catch {}
+              Start-Sleep -Milliseconds 250
+            }
+            if (-not $healthy) { throw 'Portable filesystem runtime failed /api/health smoke.' }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+          }
+
+          Get-FileHash $zip -Algorithm SHA256
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hddt_conn_v${{ env.HDDT_VERSION }}_windows_x64
+          path: release/hddt_conn_v${{ env.HDDT_VERSION }}_windows_x64.zip
+          if-no-files-found: error
+
+      - name: Commit Windows artifact to release branch
+        if: startsWith(github.ref, 'refs/heads/release/v')
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f "release/hddt_conn_v$($env:HDDT_VERSION)_windows_x64.zip"
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            git commit -m "release: add Windows v$($env:HDDT_VERSION) artifact [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          }

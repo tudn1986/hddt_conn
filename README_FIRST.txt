@@ -1,15 +1,19 @@
-*** hddt_conn v1.3.1 ***
+*** hddt_conn v1.3.1-1 ***
 
 BAN PHAT HANH DUOC DONG GOI TU MA NGUON DA KIEM THU TREN DEV 8288.
 
-THAY DOI CHINH v1.3.1
+THAY DOI CHINH v1.3.1-1
+- Ban va toi uu van hanh: chi tao phien cho /api, tach drawer hoa don (tai nhanh hon).
+- Xem docs/RELEASE_NOTES_v1.3.1-1.md.
+
+THAY DOI TRUOC DO v1.3.1
 - Cap nhat logo WebUI, favicon va icon ung dung Windows/macOS.
 - Windows: double-click HDDT_CONN.exe de khoi dong ung dung.
 - HDDT_CONN.exe su dung icon moi; system tray cung su dung icon hddt_conn moi.
 - Start-HDDT.vbs va Start-HDDT.cmd duoc giu lam fallback/debug.
 - Xem docs/RELEASE_NOTES_v1.3.1.md.
 
-hddt_conn v1.3.1 — Portable release
+hddt_conn v1.3.1-1 — Portable release
 
 WINDOWS
 1. Khuyến nghị: double-click "HDDT_CONN.exe".
