@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from 'fastify';
 import { buildApp } from '../../src/server/app.js';
+import { APP_VERSION } from '../../src/shared/version.js';
 import { TEST_MST } from '../helpers.js';
 
 let root = '';
@@ -66,7 +67,7 @@ describe('local Fastify API security', () => {
     expect(status.headers['x-content-type-options']).toBe('nosniff');
     expect(status.headers['x-frame-options']).toBe('DENY');
     expect(status.json()).toMatchObject({
-      version: '1.3.1',
+      version: APP_VERSION,
       authenticated: false,
       connectorMode: 'mock',
       capabilities: { liveSales: true, offlineDataset: true },

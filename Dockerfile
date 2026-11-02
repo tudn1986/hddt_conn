@@ -33,6 +33,10 @@ ENV HOME=/tmp \
 COPY --from=builder --chown=node:node /app/package.json ./package.json
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist ./dist
+ARG HDDT_VERSION=unknown
+LABEL org.opencontainers.image.title="hddt_conn" \
+      org.opencontainers.image.version="${HDDT_VERSION}" \
+      org.opencontainers.image.source="https://github.com/tudn1986/hddt_conn"
 USER node
 EXPOSE 3210
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \

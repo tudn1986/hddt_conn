@@ -5,6 +5,7 @@
 import ExcelJS from 'exceljs';
 import type { InvoiceDocument } from '../../shared/models/index.js';
 import { AppError, escapeExcelFormula } from '../../shared/utils/index.js';
+import { APP_VERSION } from '../../shared/version.js';
 
 const EXCEL_MAX_ROWS = 1_048_576;
 
@@ -58,7 +59,7 @@ export async function exportReportWorkbook(
     throw new AppError('EXCEL_ROW_LIMIT', 'Dữ liệu vượt giới hạn số dòng của Excel.', 413);
   }
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'HDDT_v1.3.1';
+  wb.creator = `HDDT_v${APP_VERSION}`;
   wb.created = new Date();
 
   const sheetInv = wb.addWorksheet('HoaDon', {

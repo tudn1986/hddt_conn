@@ -7,6 +7,7 @@ import fastifyStatic from '@fastify/static';
 
 import type { ConnectorMode } from '../shared/models/index.js';
 import { AppError, isRecord, publicErrorMessage } from '../shared/utils/index.js';
+import { APP_VERSION } from '../shared/version.js';
 import type { GdtConnector } from './gdt/connector.js';
 import { createConnector } from './gdt/connector.js';
 import { DatasetService } from './services/dataset.service.js';
@@ -28,7 +29,7 @@ import { registerPresentationRoutes } from './routes/presentation.routes.js';
 const currentDir = typeof __dirname === 'string'
   ? __dirname
   : path.dirname(fileURLToPath(import.meta.url));
-export const APP_VERSION = '1.3.1';
+export { APP_VERSION };
 
 export type BuildAppOptions = {
   connectorMode?: ConnectorMode;
@@ -174,6 +175,16 @@ export async function buildApp(options: BuildAppOptions = {}) {
       .header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
       .header('Cache-Control', request.url.startsWith('/api/') ? 'no-store' : 'no-cache');
     if (request.url === '/api/health') return;
+    if (process.env.NODE_ENV === 'production') {
+      reply.header(
+        'Content-Security-Policy',
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-src 'self' blob:; frame-ancestors 'none'"
+      );
+    }
+    // Static assets and the SPA shell never use a server session. Creating one per
+    // cookie-less request (bots, crawlers, first page loads) wasted memory and let
+    // anonymous traffic exhaust HDDT_MAX_SESSIONS; sessions are API-only now.
+    if (!request.url.startsWith('/api/')) return;
     const secureCookie = process.env.NODE_ENV === 'production' && process.env.HDDT_INSECURE_HTTP !== '1';
     const cookieName = secureCookie ? SESSION_COOKIE : INSECURE_SESSION_COOKIE;
     let context = sessions.resolve(parseCookie(request.headers.cookie, cookieName));
@@ -182,15 +193,9 @@ export async function buildApp(options: BuildAppOptions = {}) {
       reply.header('Set-Cookie', sessionCookie(context.id, 8 * 60 * 60, secureCookie));
     }
     request.sessionContext = context;
-    if (process.env.NODE_ENV === 'production') {
-      reply.header(
-        'Content-Security-Policy',
-        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-src 'self' blob:; frame-ancestors 'none'"
-      );
-    }
     // Reject forbidden API mutations before Fastify parses potentially large JSON bodies.
     // This prevents stale CSRF/session requests from allocating the full dataset payload in memory.
-    if (request.url.startsWith('/api/')) {
+    {
       const origin = request.headers.origin;
       if (origin && !requestOriginAllowed(origin)) {
         throw new AppError(
@@ -264,9 +269,6 @@ export async function buildApp(options: BuildAppOptions = {}) {
         'Bản Docker được quản lý bằng Portainer. Hãy Stop/Restart Stack hoặc container trong Portainer.',
         409,
       );
-    }
-    if (false && request.body?.force !== true) {
-      throw new AppError('TASKS_ACTIVE', 'Đang có tác vụ tải file. Xác nhận force để thoát.', 409);
     }
     await sessions.destroy(request.sessionContext.id, 'session.logout');
     reply.send({ ok: true });

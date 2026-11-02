@@ -10,3 +10,6 @@ coverage/
 .env.dev
 .DS_Store
 Thumbs.db
+
+# editor/manual backups
+*.backup

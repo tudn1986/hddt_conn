@@ -3,6 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { buildApp } from '../dist/server/app.js';
 
+const expectedVersion = (await fs.readFile(path.join(import.meta.dirname, '..', 'VERSION'), 'utf8')).trim();
+
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'hddt-smoke-'));
 let app;
 try {
@@ -29,7 +31,7 @@ try {
   };
 
   const status = await (await get('/api/app/status')).json();
-  if (status.version !== '1.3.1' || !status.csrfToken || status.config.storageMode !== 'browser') throw new Error('invalid public status payload');
+  if (status.version !== expectedVersion || !status.csrfToken || status.config.storageMode !== 'browser') throw new Error('invalid public status payload');
   csrf = status.csrfToken;
   const captcha = await (await get('/api/auth/captcha')).json();
   const login = await (await post('/api/auth/login', { username: '0101234567', password: 'smoke-memory-only', captcha: 'AB12', ckey: captcha.ckey })).json();

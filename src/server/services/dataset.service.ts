@@ -17,9 +17,8 @@ import {
   ensureDir,
   isRecord,
 } from '../../shared/utils/index.js';
+import { APP_VERSION } from '../../shared/version.js';
 import type { SettingsService } from './settings.service.js';
-
-const APP_VERSION = '1.3.1';
 
 function repairFinancialFields(item: DatasetDocument, direction: Direction): void {
   const rawSummary = isRecord(item.rawSummary) ? item.rawSummary : undefined;

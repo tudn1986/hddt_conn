@@ -1,4 +1,5 @@
 import type { DatasetFile, Direction, InvoiceDocument } from '../../shared/models/index.js';
+import { APP_VERSION } from '../../shared/version.js';
 
 type WritableLike = { write(data: Blob | string): Promise<void>; close(): Promise<void> };
 type FileHandleLike = { createWritable(): Promise<WritableLike> };
@@ -115,7 +116,7 @@ type SelectedDatasetInput = {
 
 export function buildSelectedDataset(input: SelectedDatasetInput, createdAt = new Date().toISOString()): DatasetFile {
   return {
-    format: 'hddt-dataset', schemaVersion: 1, appVersion: '1.3.1-public',
+    format: 'hddt-dataset', schemaVersion: 1, appVersion: `${APP_VERSION}-public`,
     meta: {
       accountTaxCode: input.accountTaxCode, direction: input.direction, fromDate: input.fromDate, toDate: input.toDate,
       createdAt, source: 'hoadondientu.gdt.gov.vn', recordCount: input.documents.length,
@@ -151,7 +152,7 @@ export const localWorkspace = {
   saveBlob: saveBlobToWorkspace,
   saveDataset: async (input: { accountTaxCode: string; direction: Direction; fromDate: string; toDate: string; documents: InvoiceDocument[] }) => {
     const dataset: DatasetFile = {
-      format: 'hddt-dataset', schemaVersion: 1, appVersion: '1.3.1-public',
+      format: 'hddt-dataset', schemaVersion: 1, appVersion: `${APP_VERSION}-public`,
       meta: {
         accountTaxCode: input.accountTaxCode, direction: input.direction, fromDate: input.fromDate, toDate: input.toDate,
         createdAt: new Date().toISOString(), source: 'hoadondientu.gdt.gov.vn', recordCount: input.documents.length,

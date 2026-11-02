@@ -5,8 +5,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        HDDT_VERSION: ${HDDT_IMAGE_TAG:-1.3.1-1}
 
-    image: hddt_conn:${HDDT_IMAGE_TAG:-1.3.0-public}
+    image: hddt_conn:${HDDT_IMAGE_TAG:-1.3.1-1}
     restart: unless-stopped
     init: true
 
@@ -31,8 +33,8 @@ services:
       HDDT_APP_DATA_DIR: /data/app
       HDDT_DATA_ROOT: /tmp/disabled-business-data
 
-      HDDT_PUBLIC_URL: https://inv.dangkhoi.net
-      HDDT_ALLOWED_ORIGINS: https://inv.dangkhoi.net
+      HDDT_PUBLIC_URL: ${HDDT_PUBLIC_URL:-https://inv.dangkhoi.net}
+      HDDT_ALLOWED_ORIGINS: ${HDDT_ALLOWED_ORIGINS:-https://inv.dangkhoi.net}
 
       HDDT_TRUST_PROXY_CIDRS: ${HDDT_TRUST_PROXY_CIDRS:-172.16.0.0/12}
 
