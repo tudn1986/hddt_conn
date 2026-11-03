@@ -1,4 +1,3 @@
-import ExcelJS from 'exceljs';
 import type {
   DynamicField,
   ExportColumnMapping,
@@ -7,6 +6,8 @@ import type {
   InvoiceDocument,
 } from '../../shared/models/index.js';
 import { AppError, escapeExcelFormula } from '../../shared/utils/index.js';
+import { APP_VERSION } from '../../shared/version.js';
+import { createXlsxStream, writeSheet } from './xlsx-stream.js';
 
 /** Foundation only: replace mappings after receiving an official AMIS import workbook. */
 export const AMIS_FOUNDATION_PROFILE: ExportProfile = {
@@ -133,40 +134,37 @@ export async function exportWithProfile(
   if (profile.documentDirection && documents.some((document) => document.direction !== profile.documentDirection)) {
     throw new AppError('PROFILE_DIRECTION', 'Dataset không đúng hướng chứng từ của profile.');
   }
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'HDDT_v1.2.1';
-  workbook.created = new Date();
-
-  for (const sheetProfile of profile.sheets) {
-    const sheet = workbook.addWorksheet(sheetProfile.name.slice(0, 31), {
-      views: [{ state: 'frozen', ySplit: 1 }],
-    });
-    sheet.addRow(sheetProfile.columns.map((column) => column.targetColumn));
-    sheet.getRow(1).font = { bold: true };
-    for (const [index, document] of documents.entries()) {
-      const row = sheetProfile.columns.map((column) => {
-        const value = mapProfileValue(resolveProfileSource(document, column.source), column);
-        if (column.required && (value === null || value === '')) {
-          throw new AppError(
-            'PROFILE_REQUIRED',
-            `Dòng ${index + 2}, cột ${column.targetColumn}: thiếu dữ liệu bắt buộc.`
-          );
-        }
-        return value;
+  const xlsx = createXlsxStream(`HDDT_v${APP_VERSION}`);
+  try {
+    for (const sheetProfile of profile.sheets) {
+      writeSheet(xlsx.writer, {
+        name: sheetProfile.name.slice(0, 31),
+        headers: sheetProfile.columns.map((column) => column.targetColumn),
+        textColumns: sheetProfile.columns.flatMap((column, index) => (
+          column.type === 'text' || column.type === 'vat-rate' ? [index] : []
+        )),
+        fixedWidths: sheetProfile.columns.map((column) => Math.min(50, Math.max(14, column.targetColumn.length + 2))),
+        rows: function* () {
+          for (const [index, document] of documents.entries()) {
+            yield sheetProfile.columns.map((column) => {
+              const value = mapProfileValue(resolveProfileSource(document, column.source), column);
+              if (column.required && (value === null || value === '')) {
+                throw new AppError(
+                  'PROFILE_REQUIRED',
+                  `Dòng ${index + 2}, cột ${column.targetColumn}: thiếu dữ liệu bắt buộc.`
+                );
+              }
+              return value;
+            });
+          }
+        },
       });
-      sheet.addRow(row);
     }
-    sheet.autoFilter = {
-      from: { row: 1, column: 1 },
-      to: { row: 1, column: sheetProfile.columns.length },
-    };
-    sheetProfile.columns.forEach((column, index) => {
-      const excelColumn = sheet.getColumn(index + 1);
-      if (column.type === 'text' || column.type === 'vat-rate') excelColumn.numFmt = '@';
-      excelColumn.width = Math.min(50, Math.max(14, column.targetColumn.length + 2));
-    });
+    return await xlsx.finish();
+  } catch (error) {
+    xlsx.abort();
+    throw error;
   }
-  return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
 export function listProfiles(): ExportProfile[] {

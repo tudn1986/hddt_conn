@@ -12,13 +12,21 @@ import { datasetEnvelopeSchema } from '../../shared/schemas/index.js';
 import {
   AppError,
   assertPathInside,
-  atomicWriteJson,
+  atomicWriteText,
   cloneJson,
   ensureDir,
   isRecord,
 } from '../../shared/utils/index.js';
 import { APP_VERSION } from '../../shared/version.js';
 import type { SettingsService } from './settings.service.js';
+
+/**
+ * Datasets written before v1.3.1-2 were pretty-printed (1.6x-1.9x the compact size depending on
+ * how many short fields each invoice has) while the size limit was measured on compact JSON when
+ * saving. Opening therefore accepts that legacy overhead so files that were saved successfully
+ * can always be opened again.
+ */
+const LEGACY_PRETTY_JSON_FACTOR = 2;
 
 function repairFinancialFields(item: DatasetDocument, direction: Direction): void {
   const rawSummary = isRecord(item.rawSummary) ? item.rawSummary : undefined;
@@ -81,9 +89,9 @@ export class DatasetService {
         },
       },
       documents: documents.map((document): DatasetDocument => {
-        const normalized = cloneJson(document);
-        normalized.rawSummary = undefined;
-        normalized.rawDetail = undefined;
+        // Clone only the normalized projection. The raw payloads are stored once beside it, so
+        // cloning them here (and discarding the copy) doubled the time and memory of every save.
+        const normalized = cloneJson({ ...document, rawSummary: undefined, rawDetail: undefined });
         return {
           key: document.key,
           normalized,
@@ -93,11 +101,13 @@ export class DatasetService {
       }),
     };
     this.validate(dataset);
-    const bytes = Buffer.byteLength(JSON.stringify(dataset));
-    if (bytes > this.settings.getConfig().storage.maxDatasetBytes) {
+    // Serialize exactly once, compact: the measured size is the size on disk, so the limit
+    // checked here is the same one enforced when the file is opened again.
+    const content = `${JSON.stringify(dataset)}\n`;
+    if (Buffer.byteLength(content) > this.settings.getConfig().storage.maxDatasetBytes) {
       throw new AppError('DATASET_TOO_LARGE', 'Dataset vượt giới hạn dung lượng cấu hình.', 413);
     }
-    await atomicWriteJson(filePath, dataset);
+    await atomicWriteText(filePath, content);
     return filePath;
   }
 
@@ -153,7 +163,8 @@ export class DatasetService {
     const realPath = assertPathInside(realDataRoot, await fs.realpath(filePath));
     const stat = await fs.stat(realPath);
     if (!stat.isFile()) throw new AppError('INVALID_DATASET_PATH', 'Đường dẫn không phải file.');
-    if (stat.size > this.settings.getConfig().storage.maxDatasetBytes) {
+    const maxOpenBytes = Math.ceil(this.settings.getConfig().storage.maxDatasetBytes * LEGACY_PRETTY_JSON_FACTOR);
+    if (stat.size > maxOpenBytes) {
       throw new AppError('DATASET_TOO_LARGE', 'Dataset vượt giới hạn dung lượng cấu hình.', 413);
     }
     return this.validate(JSON.parse(await fs.readFile(realPath, 'utf8')) as unknown);

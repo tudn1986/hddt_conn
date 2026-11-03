@@ -58,13 +58,21 @@ export async function ensureDir(dirPath: string): Promise<void> {
 
 /** Atomic JSON write in the destination directory, with fsync and cleanup. */
 export async function atomicWriteJson(filePath: string, data: unknown, mode = 0o600): Promise<void> {
+  const content = `${JSON.stringify(data, null, 2)}\n`;
+  JSON.parse(content);
+  await atomicWriteText(filePath, content, mode);
+}
+
+/**
+ * Atomic text write (temp file + fsync + rename). Callers that already hold the final
+ * serialized content use this directly so large payloads are serialized only once.
+ */
+export async function atomicWriteText(filePath: string, content: string, mode = 0o600): Promise<void> {
   await ensureDir(path.dirname(filePath));
   const tempPath = path.join(
     path.dirname(filePath),
     `.${path.basename(filePath)}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`
   );
-  const content = `${JSON.stringify(data, null, 2)}\n`;
-  JSON.parse(content);
   let handle: fs.FileHandle | undefined;
   try {
     handle = await fs.open(tempPath, 'wx', mode);

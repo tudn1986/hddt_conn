@@ -2,10 +2,10 @@
  * General Excel report exporter — Spec section 16
  */
 
-import ExcelJS from 'exceljs';
 import type { InvoiceDocument } from '../../shared/models/index.js';
 import { AppError, escapeExcelFormula } from '../../shared/utils/index.js';
 import { APP_VERSION } from '../../shared/version.js';
+import { createXlsxStream, writeSheet } from './xlsx-stream.js';
 
 const EXCEL_MAX_ROWS = 1_048_576;
 
@@ -58,158 +58,128 @@ export async function exportReportWorkbook(
   if ([documents.length, lineCount, taxCount, dynamicCount].some((count) => count + 1 > EXCEL_MAX_ROWS)) {
     throw new AppError('EXCEL_ROW_LIMIT', 'Dữ liệu vượt giới hạn số dòng của Excel.', 413);
   }
-  const wb = new ExcelJS.Workbook();
-  wb.creator = `HDDT_v${APP_VERSION}`;
-  wb.created = new Date();
-
-  const sheetInv = wb.addWorksheet('HoaDon', {
-    views: [{ state: 'frozen', ySplit: 1 }],
-  });
-  const invHeaders = [
-    'STT', 'Nguồn', 'Hướng', 'Ngày lập', 'Loại chứng từ', 'Mẫu số', 'Ký hiệu', 'Số hóa đơn',
-    'MST người bán', 'Tên người bán', 'MST người mua', 'Tên người mua',
-    'Tiền trước thuế', 'Tiền thuế', 'Tổng tiền', 'Tiền tệ', 'Tỷ giá',
-    'Trạng thái', 'TVAN', 'Mã tra cứu', 'Link tra cứu', 'Key',
-  ];
-  sheetInv.addRow(invHeaders);
-  styleHeader(sheetInv);
-
-  documents.forEach((d, idx) => {
-    sheetInv.addRow([
-      idx + 1, d.invoiceSource === 'pos' ? 'Máy tính tiền' : 'HĐĐT thường', d.direction, formatDateCell(d.issueDate),
-      asText(d.documentTypeName || d.documentTypeCode),
-      asText(d.templateNo), asText(d.series), asText(d.invoiceNo),
-      asText(d.seller?.taxCode), asText(d.seller?.name),
-      asText(d.buyer?.taxCode), asText(d.buyer?.name),
-      asNumber(d.subtotal), asNumber(d.vatAmount), asNumber(d.grandTotal),
-      asText(d.currency), asNumber(d.exchangeRate),
-      asText(d.invoiceStatus), asText(d.providerCode),
-      asText(d.lookup?.lookupCode),
-      asText(d.lookup?.lookupPathRaw || d.lookup?.lookupBaseUrl),
-      asText(d.key),
-    ]);
-  });
-  autoFilterAndWidth(sheetInv);
-  ['F', 'G', 'H', 'I', 'K', 'V'].forEach((col) => {
-    sheetInv.getColumn(col).numFmt = '@';
-  });
-
-  const sheetLine = wb.addWorksheet('ChiTiet', {
-    views: [{ state: 'frozen', ySplit: 1 }],
-  });
-  sheetLine.addRow([
-    'STT', 'Key hóa đơn', 'Số hóa đơn', 'Ký hiệu', 'STT dòng',
-    'Mã hàng hóa/dịch vụ', 'Tên hàng/dịch vụ', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền',
-    'Thuế suất', 'Tiền thuế', 'Chiết khấu', 'Tiền tệ',
-  ]);
-  styleHeader(sheetLine);
-  let lineStt = 0;
-  for (const d of documents) {
-    for (const line of d.lines || []) {
-      lineStt += 1;
-      sheetLine.addRow([
-        lineStt, asText(d.key), asText(d.invoiceNo), asText(d.series),
-        asNumber(line.lineNo), asText(line.itemCode), asText(line.itemName), asText(line.unit),
-        asNumber(line.quantity), asNumber(line.unitPrice), asNumber(line.amount),
-        asText(line.vatRateText ?? line.vatRate), asNumber(line.vatAmount),
-        asNumber(line.discountAmount), asText(line.currency || d.currency),
-      ]);
-    }
-  }
-  autoFilterAndWidth(sheetLine);
-  ['B', 'C', 'D', 'F'].forEach((column) => { sheetLine.getColumn(column).numFmt = '@'; });
-
-  const sheetTax = wb.addWorksheet('Thue', {
-    views: [{ state: 'frozen', ySplit: 1 }],
-  });
-  sheetTax.addRow([
-    'STT', 'Key hóa đơn', 'Số hóa đơn', 'Thuế suất',
-    'Tiền chịu thuế', 'Tiền thuế', 'Giá trị thuế suất',
-  ]);
-  styleHeader(sheetTax);
-  let taxStt = 0;
-  for (const d of documents) {
-    for (const t of d.taxSummaries || []) {
-      taxStt += 1;
-      sheetTax.addRow([
-        taxStt, asText(d.key), asText(d.invoiceNo), asText(t.vatRateText),
-        asNumber(t.taxableAmount), asNumber(t.vatAmount), asNumber(t.vatRateValue),
-      ]);
-    }
-  }
-  autoFilterAndWidth(sheetTax);
-  ['B', 'C'].forEach((column) => { sheetTax.getColumn(column).numFmt = '@'; });
-
-  const sheetLookup = wb.addWorksheet('TraCuu', {
-    views: [{ state: 'frozen', ySplit: 1 }],
-  });
-  sheetLookup.addRow([
-    'STT', 'Key', 'Số hóa đơn', 'TVAN', 'Mã tra cứu', 'Loại mã',
-    'Base URL', 'Path', 'Confidence',
-  ]);
-  styleHeader(sheetLookup);
-  documents.forEach((d, idx) => {
-    sheetLookup.addRow([
-      idx + 1, asText(d.key), asText(d.invoiceNo),
-      asText(d.providerCode || d.lookup?.providerCode),
-      asText(d.lookup?.lookupCode), asText(d.lookup?.lookupCodeType),
-      asText(d.lookup?.lookupBaseUrl), asText(d.lookup?.lookupPathRaw),
-      asText(d.lookup?.confidence),
-    ]);
-  });
-  autoFilterAndWidth(sheetLookup);
-  ['B', 'C', 'E'].forEach((column) => { sheetLookup.getColumn(column).numFmt = '@'; });
-
-  const sheetDyn = wb.addWorksheet('Dynamic', {
-    views: [{ state: 'frozen', ySplit: 1 }],
-  });
-  sheetDyn.addRow(['STT', 'Key hóa đơn', 'Section', 'Name', 'Value']);
-  styleHeader(sheetDyn);
-  let dynStt = 0;
-  for (const d of documents) {
-    const fields = [
-      ...(d.dynamicFields || []),
-      ...(d.seller.dynamicFields || []),
-      ...(d.buyer.dynamicFields || []),
-      ...d.lines.flatMap((line) => line.dynamicFields || []),
-    ];
-    for (const f of fields) {
-      dynStt += 1;
-      sheetDyn.addRow([
-        dynStt, asText(d.key), asText(f.section), asText(f.name),
-        asText(typeof f.rawValue === 'object' ? JSON.stringify(f.rawValue) : f.rawValue),
-      ]);
-    }
-  }
-  autoFilterAndWidth(sheetDyn);
-  sheetDyn.getColumn('B').numFmt = '@';
-
-  const buf = await wb.xlsx.writeBuffer();
-  return Buffer.from(buf);
-}
-
-function styleHeader(sheet: ExcelJS.Worksheet) {
-  const row = sheet.getRow(1);
-  row.font = { bold: true };
-  row.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' },
-  };
-}
-
-function autoFilterAndWidth(sheet: ExcelJS.Worksheet) {
-  const colCount = sheet.columnCount;
-  sheet.autoFilter = {
-    from: { row: 1, column: 1 },
-    to: { row: 1, column: colCount },
-  };
-  sheet.columns.forEach((col) => {
-    let max = 12;
-    col.eachCell?.({ includeEmpty: true }, (cell) => {
-      const len = String(cell.value ?? '').length;
-      if (len > max) max = Math.min(len + 2, 50);
+  const xlsx = createXlsxStream(`HDDT_v${APP_VERSION}`);
+  try {
+    writeSheet(xlsx.writer, {
+      name: 'HoaDon',
+      headers: [
+        'STT', 'Nguồn', 'Hướng', 'Ngày lập', 'Loại chứng từ', 'Mẫu số', 'Ký hiệu', 'Số hóa đơn',
+        'MST người bán', 'Tên người bán', 'MST người mua', 'Tên người mua',
+        'Tiền trước thuế', 'Tiền thuế', 'Tổng tiền', 'Tiền tệ', 'Tỷ giá',
+        'Trạng thái', 'TVAN', 'Mã tra cứu', 'Link tra cứu', 'Key',
+      ],
+      textColumns: [5, 6, 7, 8, 10, 21],
+      headerFill: true,
+      rows: function* () {
+        for (const [idx, d] of documents.entries()) {
+          yield [
+            idx + 1, d.invoiceSource === 'pos' ? 'Máy tính tiền' : 'HĐĐT thường', d.direction, formatDateCell(d.issueDate),
+            asText(d.documentTypeName || d.documentTypeCode),
+            asText(d.templateNo), asText(d.series), asText(d.invoiceNo),
+            asText(d.seller?.taxCode), asText(d.seller?.name),
+            asText(d.buyer?.taxCode), asText(d.buyer?.name),
+            asNumber(d.subtotal), asNumber(d.vatAmount), asNumber(d.grandTotal),
+            asText(d.currency), asNumber(d.exchangeRate),
+            asText(d.invoiceStatus), asText(d.providerCode),
+            asText(d.lookup?.lookupCode),
+            asText(d.lookup?.lookupPathRaw || d.lookup?.lookupBaseUrl),
+            asText(d.key),
+          ];
+        }
+      },
     });
-    col.width = max;
-  });
+
+    writeSheet(xlsx.writer, {
+      name: 'ChiTiet',
+      headers: [
+        'STT', 'Key hóa đơn', 'Số hóa đơn', 'Ký hiệu', 'STT dòng',
+        'Mã hàng hóa/dịch vụ', 'Tên hàng/dịch vụ', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền',
+        'Thuế suất', 'Tiền thuế', 'Chiết khấu', 'Tiền tệ',
+      ],
+      textColumns: [1, 2, 3, 5],
+      headerFill: true,
+      rows: function* () {
+        let lineStt = 0;
+        for (const d of documents) {
+          for (const line of d.lines || []) {
+            lineStt += 1;
+            yield [
+              lineStt, asText(d.key), asText(d.invoiceNo), asText(d.series),
+              asNumber(line.lineNo), asText(line.itemCode), asText(line.itemName), asText(line.unit),
+              asNumber(line.quantity), asNumber(line.unitPrice), asNumber(line.amount),
+              asText(line.vatRateText ?? line.vatRate), asNumber(line.vatAmount),
+              asNumber(line.discountAmount), asText(line.currency || d.currency),
+            ];
+          }
+        }
+      },
+    });
+
+    writeSheet(xlsx.writer, {
+      name: 'Thue',
+      headers: ['STT', 'Key hóa đơn', 'Số hóa đơn', 'Thuế suất', 'Tiền chịu thuế', 'Tiền thuế', 'Giá trị thuế suất'],
+      textColumns: [1, 2],
+      headerFill: true,
+      rows: function* () {
+        let taxStt = 0;
+        for (const d of documents) {
+          for (const t of d.taxSummaries || []) {
+            taxStt += 1;
+            yield [
+              taxStt, asText(d.key), asText(d.invoiceNo), asText(t.vatRateText),
+              asNumber(t.taxableAmount), asNumber(t.vatAmount), asNumber(t.vatRateValue),
+            ];
+          }
+        }
+      },
+    });
+
+    writeSheet(xlsx.writer, {
+      name: 'TraCuu',
+      headers: ['STT', 'Key', 'Số hóa đơn', 'TVAN', 'Mã tra cứu', 'Loại mã', 'Base URL', 'Path', 'Confidence'],
+      textColumns: [1, 2, 4],
+      headerFill: true,
+      rows: function* () {
+        for (const [idx, d] of documents.entries()) {
+          yield [
+            idx + 1, asText(d.key), asText(d.invoiceNo),
+            asText(d.providerCode || d.lookup?.providerCode),
+            asText(d.lookup?.lookupCode), asText(d.lookup?.lookupCodeType),
+            asText(d.lookup?.lookupBaseUrl), asText(d.lookup?.lookupPathRaw),
+            asText(d.lookup?.confidence),
+          ];
+        }
+      },
+    });
+
+    writeSheet(xlsx.writer, {
+      name: 'Dynamic',
+      headers: ['STT', 'Key hóa đơn', 'Section', 'Name', 'Value'],
+      textColumns: [1],
+      headerFill: true,
+      rows: function* () {
+        let dynStt = 0;
+        for (const d of documents) {
+          const fields = [
+            ...(d.dynamicFields || []),
+            ...(d.seller.dynamicFields || []),
+            ...(d.buyer.dynamicFields || []),
+            ...d.lines.flatMap((line) => line.dynamicFields || []),
+          ];
+          for (const f of fields) {
+            dynStt += 1;
+            yield [
+              dynStt, asText(d.key), asText(f.section), asText(f.name),
+              asText(typeof f.rawValue === 'object' ? JSON.stringify(f.rawValue) : f.rawValue),
+            ];
+          }
+        }
+      },
+    });
+
+    return await xlsx.finish();
+  } catch (error) {
+    xlsx.abort();
+    throw error;
+  }
 }

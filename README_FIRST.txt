@@ -1,8 +1,14 @@
-*** hddt_conn v1.3.1-1 ***
+*** hddt_conn v1.3.1-2 ***
 
 BAN PHAT HANH DUOC DONG GOI TU MA NGUON DA KIEM THU TREN DEV 8288.
 
-THAY DOI CHINH v1.3.1-1
+THAY DOI CHINH v1.3.1-2
+- Sua loi: dataset luu duoc nhung khong mo lai duoc khi vuot ~22.700 hoa don (gioi han luu/mo khong dong nhat).
+- File dataset ghi dang nen (nho hon ~35%), luu nhanh hon, it RAM hon; file cu van mo duoc.
+- Xuat Excel theo luong: RAM gan nhu khong tang theo so hoa don.
+- Xem docs/RELEASE_NOTES_v1.3.1-2.md.
+
+THAY DOI TRUOC DO v1.3.1-1
 - Ban va toi uu van hanh: chi tao phien cho /api, tach drawer hoa don (tai nhanh hon).
 - Xem docs/RELEASE_NOTES_v1.3.1-1.md.
 
@@ -13,7 +19,7 @@ THAY DOI TRUOC DO v1.3.1
 - Start-HDDT.vbs va Start-HDDT.cmd duoc giu lam fallback/debug.
 - Xem docs/RELEASE_NOTES_v1.3.1.md.
 
-hddt_conn v1.3.1-1 — Portable release
+hddt_conn v1.3.1-2 — Portable release
 
 WINDOWS
 1. Khuyến nghị: double-click "HDDT_CONN.exe".
