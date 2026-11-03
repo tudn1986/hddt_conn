@@ -1,15 +1,15 @@
 {
   "format": "hddt-source-release-manifest",
   "schemaVersion": 1,
-  "appVersion": "1.3.1",
-  "releaseRevision": "1.3.1",
-  "generatedAt": "2026-09-29T09:53:03.329Z",
+  "appVersion": "1.3.1-2",
+  "releaseRevision": "1.3.1-2",
+  "generatedAt": "2026-11-03T03:47:52.077Z",
   "scope": "source",
   "manifestSelfExcluded": true,
-  "fileCount": 329,
-  "totalBytes": 3305564,
+  "fileCount": 342,
+  "totalBytes": 3318996,
   "verification": {
-    "report": "docs/RELEASE_NOTES_v1.3.1.md",
+    "report": "docs/RELEASE_NOTES_v1.3.1-2.md",
     "dependencyEnabledVerify": "pnpm-verify-required-before-packaging",
     "typescriptSyntaxParse": "covered-by-pnpm-verify",
     "mjsSyntax": "covered-by-pnpm-verify",
@@ -33,8 +33,8 @@
     },
     {
       "path": ".env.example",
-      "size": 580,
-      "sha256": "df77bef9d392ff12b96259c2d646d3fb4663abe47ea982e918629b6e81d48365"
+      "size": 732,
+      "sha256": "4d231df96517da83085edb0904160f0596509e5b99ccce304cf536c82d581c41"
     },
     {
       "path": ".github/workflows/release-windows-v1.3.1.yml",
@@ -42,9 +42,14 @@
       "sha256": "9abdfafe6634b0c4ccffb29edc59f38a55903b3109fbee306f38ae530ffcdf56"
     },
     {
+      "path": ".github/workflows/release-windows.yml",
+      "size": 5145,
+      "sha256": "bc69c9e9330484d70174dee77d4f97d802ab6a9233a2a9dde3f17257220aca94"
+    },
+    {
       "path": ".gitignore",
-      "size": 119,
-      "sha256": "4fbf5a5910308a5ca5ba0f2a2b0508333cc26896f152487c8d436891c694d34c"
+      "size": 153,
+      "sha256": "d1fefe7e86a61dd24ceb8e87a3157ef24cc8da13f5f1633785ff9842650b6d28"
     },
     {
       "path": "assets/branding/hddt_conn_avatar_corporate.svg",
@@ -83,8 +88,8 @@
     },
     {
       "path": "compose.yml",
-      "size": 1936,
-      "sha256": "4e6e56907297dbfbfb1dbd5cd756b6671f1e3c67cd33e468bf22bc4d8ab2b569"
+      "size": 2037,
+      "sha256": "73ea5f59761b6076b85bb339bce890cc17df783c509f65adb6879eafb4cbcd6c"
     },
     {
       "path": "DATA_ARCHITECTURE_CURRENT.md",
@@ -148,8 +153,8 @@
     },
     {
       "path": "Dockerfile",
-      "size": 1662,
-      "sha256": "389b333000a989e70e24df21e24b7735c6ff152204ea0d3ef5073125506f7075"
+      "size": 1835,
+      "sha256": "801dfd5563485c659ac4b54dbba8a338b8f32a259b60238ff30dc3b4cc822aca"
     },
     {
       "path": "docs/ADMIN_WEBUI_V1.3.0-RC.1.md",
@@ -222,6 +227,11 @@
       "sha256": "c565569454618df0c98e217e9aa5898e7d42dbbc580378653e30d3e3d428be84"
     },
     {
+      "path": "docs/HANDOVER_v1.3.1-2.md",
+      "size": 5822,
+      "sha256": "b205ea41a20dc16effe25678af1513dd7ff03f21fd348de91c39d6c71037d6af"
+    },
+    {
       "path": "docs/HOTFIX_v1.2.1-r5_FINANCIAL_TOTALS.md",
       "size": 2410,
       "sha256": "ec098218aa8eebbc060d6a0c174ff539360c70e756d4abc99d8e6f523aeb16a6"
@@ -245,6 +255,11 @@
       "path": "docs/INFORMATION_REQUIRED_v1.1.0.md",
       "size": 2757,
       "sha256": "89f6a5c402c08786e13b37ea2a8770ce9464bcd3790451a7ef09e1367905a03a"
+    },
+    {
+      "path": "docs/INVENTORY_v1.3.1-1.md",
+      "size": 5497,
+      "sha256": "b9842706e6a4871d288a5b15731c473058edb6c7bac0f6efadcaabe66f5bc31d"
     },
     {
       "path": "docs/INVOICE_RELATION_POPOVER_DESIGN_SOURCE.md",
@@ -320,6 +335,16 @@
       "path": "docs/RELEASE_NOTES_v1.3.0-rc.2.md",
       "size": 3087,
       "sha256": "7ce7b7a8cc5a23281666ab6a33b01ce6816ef1a05d7eb58efdd25c44b3e14511"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v1.3.1-1.md",
+      "size": 2949,
+      "sha256": "12ecf61f5c92116b568db8aa63efc42ef40abc6ee6561c2e24773bfaccb2d7f7"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v1.3.1-2.md",
+      "size": 4000,
+      "sha256": "b5cc9cb59d63af67bdd655ff629864fca65b2169f93ae28830557622f43b6f69"
     },
     {
       "path": "docs/RELEASE_NOTES_v1.3.1.md",
@@ -793,8 +818,8 @@
     },
     {
       "path": "package.json",
-      "size": 2218,
-      "sha256": "faf5e3c98dd8a0edfd9d8772c1907ed99007b6bf470b2b6b75e4f6042e8affd4"
+      "size": 2256,
+      "sha256": "193d2c5ddec71aa8cd8d9cce4679785208d9f04383fb165a171840e5fcbe3c7f"
     },
     {
       "path": "pnpm-lock.yaml",
@@ -833,8 +858,8 @@
     },
     {
       "path": "README_FIRST.txt",
-      "size": 2824,
-      "sha256": "6588d26ba115b3ae86aef5c29a94da3644d6f083275ed44e90cb1f595abda724"
+      "size": 3316,
+      "sha256": "3606180971921304818e81b6fcab31fe9c127ee1722d543a51f9c2792fca07bd"
     },
     {
       "path": "README_PUBLIC.md",
@@ -857,9 +882,19 @@
       "sha256": "4c2667efe20b8a3fcedfb0543b860fbdab10c67f76eac72e36a6b366d25c3a29"
     },
     {
+      "path": "README.md",
+      "size": 6903,
+      "sha256": "e363d0f060fc23831977ee3f7c8f4df9d366fff1d5fb4476ab30ab3154034562"
+    },
+    {
       "path": "scripts/check-scripts.mjs",
       "size": 507,
       "sha256": "ef801bc29d3750d80f6dc5c7bfcb589457814011c25e7eaaa3a9e43d1a6d923b"
+    },
+    {
+      "path": "scripts/check-version.mjs",
+      "size": 2134,
+      "sha256": "f1298160aab6640e01d8cdb684e060f77345c0933063fb35bb71d13cb9f35744"
     },
     {
       "path": "scripts/clean.mjs",
@@ -893,8 +928,8 @@
     },
     {
       "path": "scripts/smoke-test.mjs",
-      "size": 3733,
-      "sha256": "c14b283159166ba345e054f9cda8d90a25556ea0528cb4af9b53383ab60d87a0"
+      "size": 3851,
+      "sha256": "580449a5b983b73f0764c09ce010989f549e9fc66f0d3c9e6db9e1b5871680b4"
     },
     {
       "path": "scripts/start.mjs",
@@ -908,28 +943,28 @@
     },
     {
       "path": "src/server/app.ts",
-      "size": 12941,
-      "sha256": "6f29c08686b375d237af37387d8c7f06fc83f7885b215c988ef66a3926627a0f"
+      "size": 13072,
+      "sha256": "ee386c53fda951827e050e1fa46629a13f86ae5a832fc2b280423327ede6e2a0"
     },
     {
       "path": "src/server/export/excel-report.ts",
-      "size": 7498,
-      "sha256": "511dbfbee59e71f4fbd2a7fe8bd7d97760270fcd1291dab276a7f4b1cade6958"
+      "size": 6792,
+      "sha256": "41a15ac0b14ce74ce3ac0ea30336c35fa0680937fdd9a0fe58eb355d2d9ddf50"
     },
     {
       "path": "src/server/export/profile-engine.ts",
-      "size": 7296,
-      "sha256": "c0601898df1931ad199c9b404605468ec6d257935d5dc6c76df785580b3161e1"
+      "size": 7059,
+      "sha256": "de4b74e2ec9f1fec028b9ca15dd5e0b52773f6b8d7ac8086a0fa54e4568a7b87"
+    },
+    {
+      "path": "src/server/export/xlsx-stream.ts",
+      "size": 3572,
+      "sha256": "d8945e0f29dba6e7ee4d21f222368d296f3f59876253cf8848c44077b0a0f324"
     },
     {
       "path": "src/server/gdt/connector.ts",
       "size": 25203,
       "sha256": "dbbd490487dc14f8a9550bbc2991c30143ae9541071cd4c9c69d060658d0d6b1"
-    },
-    {
-      "path": "src/server/gdt/connector.ts.backup",
-      "size": 25586,
-      "sha256": "c43f0967d69fc5dfb524eabf682fc84db4526b07834b88487f5c9bf5c5321b37"
     },
     {
       "path": "src/server/gdt/zip.ts",
@@ -993,8 +1028,8 @@
     },
     {
       "path": "src/server/services/dataset.service.ts",
-      "size": 7243,
-      "sha256": "eb0145ff36f99c4c8581305ee98a69347c11b0ca69ea4ca68bef1866a297d935"
+      "size": 8054,
+      "sha256": "64ca4484eb7f0fd10c21a84c3b97f6b5f781077c692ccca611012f588a57d3e1"
     },
     {
       "path": "src/server/services/download.service.ts",
@@ -1248,18 +1283,18 @@
     },
     {
       "path": "src/shared/utils/index.ts",
-      "size": 4809,
-      "sha256": "1083b2f94605c2deb8ef898e83c723679348519722f25e87fd52c8e920376c9d"
+      "size": 5021,
+      "sha256": "acdaceac363fac91d0bc4a859bd692917dfa70b354747c264a4f210b6244ebab"
+    },
+    {
+      "path": "src/shared/version.ts",
+      "size": 304,
+      "sha256": "74defd7fd51dc340b4ba0821f9c0702c89f2945ccce7015dc5cb0f2ea8691581"
     },
     {
       "path": "src/web/api/client.ts",
       "size": 15772,
       "sha256": "c1c5d1ea966e09ff2440ce7aeae989224292ecbcecb15dca74b83c517b4ad56e"
-    },
-    {
-      "path": "src/web/api/client.ts.backup",
-      "size": 10277,
-      "sha256": "0f998cce6b179991784e6be5a27dd9b586ed97f1e21c3623dc30d6213c8db083"
     },
     {
       "path": "src/web/App.tsx",
@@ -1275,6 +1310,21 @@
       "path": "src/web/components/InvoiceProviderResearchPanel.tsx",
       "size": 32725,
       "sha256": "0313518d0b8828026dd55daf7216c2ccf672ce422172db406723555032029b92"
+    },
+    {
+      "path": "src/web/components/invoices/invoice-format.ts",
+      "size": 623,
+      "sha256": "b0f1e8f2f5128b966d76f25fd1159b583b1f24dba6c312f360686c19a6e56f9f"
+    },
+    {
+      "path": "src/web/components/invoices/invoice-status.tsx",
+      "size": 1486,
+      "sha256": "74563c9f3e86f7134788089154f9831988e350dd6f7436191b62a1a3dceae2c6"
+    },
+    {
+      "path": "src/web/components/invoices/InvoiceDrawer.tsx",
+      "size": 41285,
+      "sha256": "206820e3bdbd489ef02b4ffc6e4706620318af6e92e8b775cb4183aefa5ba19f"
     },
     {
       "path": "src/web/components/invoices/InvoiceLinesModal.tsx",
@@ -1353,8 +1403,8 @@
     },
     {
       "path": "src/web/pages/InvoicePage.tsx",
-      "size": 120863,
-      "sha256": "07087a02ac5a1276e3e6151c27a1ff1449cf392a23f933f0e2a6c43206533b59"
+      "size": 78309,
+      "sha256": "77464825d6fcea83d5e69dd1846d34fbb818f3b6d11621097856f95f75587c9c"
     },
     {
       "path": "src/web/pages/LoginPage.tsx",
@@ -1378,8 +1428,8 @@
     },
     {
       "path": "src/web/storage/local-workspace.ts",
-      "size": 8093,
-      "sha256": "2199ec088ba4d215f14d93c1764ac53e06897d071d736e9765260256612ba247"
+      "size": 8166,
+      "sha256": "d5598403315e73bc32fe7b4b6a0ffb2001f63b09e2ee6e43ee57ad3a4f75d015"
     },
     {
       "path": "src/web/ui-tokens.css",
@@ -1453,8 +1503,8 @@
     },
     {
       "path": "tests/integration/app-workflow.test.ts",
-      "size": 9055,
-      "sha256": "58711f2efac706857c00f0e5521298f5e2ce506e37edde6aa5e9670a1e79a056"
+      "size": 9118,
+      "sha256": "dd87a58c04de7aedc8304002f726dd11324f94bcdf3df5466841f9800faef89e"
     },
     {
       "path": "tests/integration/detail-concurrency.test.ts",
@@ -1477,6 +1527,11 @@
       "sha256": "1181dc0851c8f495afd049c97dc54ce6b65fbc54abc38559f0af1241ddf10343"
     },
     {
+      "path": "tests/integration/static-no-session.test.ts",
+      "size": 1667,
+      "sha256": "6e9263e8a7eb10eebb37dbe8ce9909c835da2d9f8bafca0dbe44b3e6d73b1d3c"
+    },
+    {
       "path": "tests/integration/thaison-flow.test.ts",
       "size": 5721,
       "sha256": "eb4fc3b422bd8b8dfbf13eb59017b4c741c3c652790733a92a01cb9490fa2748"
@@ -1497,6 +1552,11 @@
       "sha256": "db73f62c8a57171d66def53e7ae30824c5e088682f627086bdad80c5176b2505"
     },
     {
+      "path": "tests/unit/dataset-size-limits.test.ts",
+      "size": 4971,
+      "sha256": "dab8104cb54614b69a761d951a60fd6367aa49d2115825b50c21615c82fc2422"
+    },
+    {
       "path": "tests/unit/dataset.test.ts",
       "size": 4959,
       "sha256": "7cc48c2fccb0f03bdb48514ee8f56a5f0287e0cc3130f1b08bf970d879d79451"
@@ -1515,6 +1575,11 @@
       "path": "tests/unit/ehoadondientu.test.ts",
       "size": 11399,
       "sha256": "e0905542329d48b7f8f74571046d87e85d512a9d360dce7b2bcf99f1727d8441"
+    },
+    {
+      "path": "tests/unit/export-streaming.test.ts",
+      "size": 4034,
+      "sha256": "c6a0d465f47d60de53535c32b86c562cab1f17cfd0ee5c3253460f6a3ac50885"
     },
     {
       "path": "tests/unit/export.test.ts",
@@ -1658,8 +1723,8 @@
     },
     {
       "path": "VERSION",
-      "size": 6,
-      "sha256": "10e2e117b01523891ca271a615ae36e9d5e52348fd7d642f66727602c1b8dcbe"
+      "size": 8,
+      "sha256": "da1dd8e51d6d1835df3e44cfa1a4aed4da0fc33ccaa563608a6a98517f314c23"
     },
     {
       "path": "vite.config.ts",
